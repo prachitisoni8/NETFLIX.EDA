@@ -1,0 +1,2364 @@
+{
+ "cells": [
+  {
+   "cell_type": "code",
+   "execution_count": 1,
+   "id": "47466c44",
+   "metadata": {
+    "_cell_guid": "b1076dfc-b9ad-4769-8c92-a6c4dae69d19",
+    "_uuid": "8f2839f25d086af736a60e9eeb907d3b93b6e0e5",
+    "execution": {
+     "iopub.execute_input": "2024-10-13T14:08:00.593734Z",
+     "iopub.status.busy": "2024-10-13T14:08:00.592812Z",
+     "iopub.status.idle": "2024-10-13T14:08:01.544655Z",
+     "shell.execute_reply": "2024-10-13T14:08:01.543185Z"
+    },
+    "papermill": {
+     "duration": 0.967197,
+     "end_time": "2024-10-13T14:08:01.547387",
+     "exception": false,
+     "start_time": "2024-10-13T14:08:00.580190",
+     "status": "completed"
+    },
+    "tags": []
+   },
+   "outputs": [
+    {
+     "name": "stdout",
+     "output_type": "stream",
+     "text": [
+      "/kaggle/input/netflix-shows/netflix_titles.csv\n"
+     ]
+    }
+   ],
+   "source": [
+    "# This Python 3 environment comes with many helpful analytics libraries installed\n",
+    "# It is defined by the kaggle/python Docker image: https://github.com/kaggle/docker-python\n",
+    "# For example, here's several helpful packages to load\n",
+    "\n",
+    "import numpy as np # linear algebra\n",
+    "import pandas as pd # data processing, CSV file I/O (e.g. pd.read_csv)\n",
+    "\n",
+    "# Input data files are available in the read-only \"../input/\" directory\n",
+    "# For example, running this (by clicking run or pressing Shift+Enter) will list all files under the input directory\n",
+    "\n",
+    "import os\n",
+    "for dirname, _, filenames in os.walk('/kaggle/input'):\n",
+    "    for filename in filenames:\n",
+    "        print(os.path.join(dirname, filename))\n",
+    "\n",
+    "# You can write up to 20GB to the current directory (/kaggle/working/) that gets preserved as output when you create a version using \"Save & Run All\" \n",
+    "# You can also write temporary files to /kaggle/temp/, but they won't be saved outside of the current session"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 2,
+   "id": "583af77d",
+   "metadata": {
+    "execution": {
+     "iopub.execute_input": "2024-10-13T14:08:01.569989Z",
+     "iopub.status.busy": "2024-10-13T14:08:01.569382Z",
+     "iopub.status.idle": "2024-10-13T14:08:04.093062Z",
+     "shell.execute_reply": "2024-10-13T14:08:04.092140Z"
+    },
+    "papermill": {
+     "duration": 2.538277,
+     "end_time": "2024-10-13T14:08:04.096000",
+     "exception": false,
+     "start_time": "2024-10-13T14:08:01.557723",
+     "status": "completed"
+    },
+    "tags": []
+   },
+   "outputs": [],
+   "source": [
+    "import numpy as np \n",
+    "import pandas as pd\n",
+    "\n",
+    "import matplotlib.pyplot as plt\n",
+    "%matplotlib inline\n",
+    "import seaborn as sns \n",
+    "import plotly.express as px \n",
+    "import plotly.graph_objects as go\n",
+    "\n",
+    "import warnings\n",
+    "warnings.filterwarnings('ignore')"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 3,
+   "id": "bb9382d0",
+   "metadata": {
+    "execution": {
+     "iopub.execute_input": "2024-10-13T14:08:04.118538Z",
+     "iopub.status.busy": "2024-10-13T14:08:04.117903Z",
+     "iopub.status.idle": "2024-10-13T14:08:04.283656Z",
+     "shell.execute_reply": "2024-10-13T14:08:04.282533Z"
+    },
+    "papermill": {
+     "duration": 0.179412,
+     "end_time": "2024-10-13T14:08:04.286054",
+     "exception": false,
+     "start_time": "2024-10-13T14:08:04.106642",
+     "status": "completed"
+    },
+    "tags": []
+   },
+   "outputs": [
+    {
+     "data": {
+      "text/html": [
+       "<div>\n",
+       "<style scoped>\n",
+       "    .dataframe tbody tr th:only-of-type {\n",
+       "        vertical-align: middle;\n",
+       "    }\n",
+       "\n",
+       "    .dataframe tbody tr th {\n",
+       "        vertical-align: top;\n",
+       "    }\n",
+       "\n",
+       "    .dataframe thead th {\n",
+       "        text-align: right;\n",
+       "    }\n",
+       "</style>\n",
+       "<table border=\"1\" class=\"dataframe\">\n",
+       "  <thead>\n",
+       "    <tr style=\"text-align: right;\">\n",
+       "      <th></th>\n",
+       "      <th>show_id</th>\n",
+       "      <th>type</th>\n",
+       "      <th>title</th>\n",
+       "      <th>director</th>\n",
+       "      <th>cast</th>\n",
+       "      <th>country</th>\n",
+       "      <th>date_added</th>\n",
+       "      <th>release_year</th>\n",
+       "      <th>rating</th>\n",
+       "      <th>duration</th>\n",
+       "      <th>listed_in</th>\n",
+       "      <th>description</th>\n",
+       "    </tr>\n",
+       "  </thead>\n",
+       "  <tbody>\n",
+       "    <tr>\n",
+       "      <th>0</th>\n",
+       "      <td>s1</td>\n",
+       "      <td>Movie</td>\n",
+       "      <td>Dick Johnson Is Dead</td>\n",
+       "      <td>Kirsten Johnson</td>\n",
+       "      <td>NaN</td>\n",
+       "      <td>United States</td>\n",
+       "      <td>September 25, 2021</td>\n",
+       "      <td>2020</td>\n",
+       "      <td>PG-13</td>\n",
+       "      <td>90 min</td>\n",
+       "      <td>Documentaries</td>\n",
+       "      <td>As her father nears the end of his life, filmm...</td>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>1</th>\n",
+       "      <td>s2</td>\n",
+       "      <td>TV Show</td>\n",
+       "      <td>Blood &amp; Water</td>\n",
+       "      <td>NaN</td>\n",
+       "      <td>Ama Qamata, Khosi Ngema, Gail Mabalane, Thaban...</td>\n",
+       "      <td>South Africa</td>\n",
+       "      <td>September 24, 2021</td>\n",
+       "      <td>2021</td>\n",
+       "      <td>TV-MA</td>\n",
+       "      <td>2 Seasons</td>\n",
+       "      <td>International TV Shows, TV Dramas, TV Mysteries</td>\n",
+       "      <td>After crossing paths at a party, a Cape Town t...</td>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>2</th>\n",
+       "      <td>s3</td>\n",
+       "      <td>TV Show</td>\n",
+       "      <td>Ganglands</td>\n",
+       "      <td>Julien Leclercq</td>\n",
+       "      <td>Sami Bouajila, Tracy Gotoas, Samuel Jouy, Nabi...</td>\n",
+       "      <td>NaN</td>\n",
+       "      <td>September 24, 2021</td>\n",
+       "      <td>2021</td>\n",
+       "      <td>TV-MA</td>\n",
+       "      <td>1 Season</td>\n",
+       "      <td>Crime TV Shows, International TV Shows, TV Act...</td>\n",
+       "      <td>To protect his family from a powerful drug lor...</td>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>3</th>\n",
+       "      <td>s4</td>\n",
+       "      <td>TV Show</td>\n",
+       "      <td>Jailbirds New Orleans</td>\n",
+       "      <td>NaN</td>\n",
+       "      <td>NaN</td>\n",
+       "      <td>NaN</td>\n",
+       "      <td>September 24, 2021</td>\n",
+       "      <td>2021</td>\n",
+       "      <td>TV-MA</td>\n",
+       "      <td>1 Season</td>\n",
+       "      <td>Docuseries, Reality TV</td>\n",
+       "      <td>Feuds, flirtations and toilet talk go down amo...</td>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>4</th>\n",
+       "      <td>s5</td>\n",
+       "      <td>TV Show</td>\n",
+       "      <td>Kota Factory</td>\n",
+       "      <td>NaN</td>\n",
+       "      <td>Mayur More, Jitendra Kumar, Ranjan Raj, Alam K...</td>\n",
+       "      <td>India</td>\n",
+       "      <td>September 24, 2021</td>\n",
+       "      <td>2021</td>\n",
+       "      <td>TV-MA</td>\n",
+       "      <td>2 Seasons</td>\n",
+       "      <td>International TV Shows, Romantic TV Shows, TV ...</td>\n",
+       "      <td>In a city of coaching centers known to train I...</td>\n",
+       "    </tr>\n",
+       "  </tbody>\n",
+       "</table>\n",
+       "</div>"
+      ],
+      "text/plain": [
+       "  show_id     type                  title         director  \\\n",
+       "0      s1    Movie   Dick Johnson Is Dead  Kirsten Johnson   \n",
+       "1      s2  TV Show          Blood & Water              NaN   \n",
+       "2      s3  TV Show              Ganglands  Julien Leclercq   \n",
+       "3      s4  TV Show  Jailbirds New Orleans              NaN   \n",
+       "4      s5  TV Show           Kota Factory              NaN   \n",
+       "\n",
+       "                                                cast        country  \\\n",
+       "0                                                NaN  United States   \n",
+       "1  Ama Qamata, Khosi Ngema, Gail Mabalane, Thaban...   South Africa   \n",
+       "2  Sami Bouajila, Tracy Gotoas, Samuel Jouy, Nabi...            NaN   \n",
+       "3                                                NaN            NaN   \n",
+       "4  Mayur More, Jitendra Kumar, Ranjan Raj, Alam K...          India   \n",
+       "\n",
+       "           date_added  release_year rating   duration  \\\n",
+       "0  September 25, 2021          2020  PG-13     90 min   \n",
+       "1  September 24, 2021          2021  TV-MA  2 Seasons   \n",
+       "2  September 24, 2021          2021  TV-MA   1 Season   \n",
+       "3  September 24, 2021          2021  TV-MA   1 Season   \n",
+       "4  September 24, 2021          2021  TV-MA  2 Seasons   \n",
+       "\n",
+       "                                           listed_in  \\\n",
+       "0                                      Documentaries   \n",
+       "1    International TV Shows, TV Dramas, TV Mysteries   \n",
+       "2  Crime TV Shows, International TV Shows, TV Act...   \n",
+       "3                             Docuseries, Reality TV   \n",
+       "4  International TV Shows, Romantic TV Shows, TV ...   \n",
+       "\n",
+       "                                         description  \n",
+       "0  As her father nears the end of his life, filmm...  \n",
+       "1  After crossing paths at a party, a Cape Town t...  \n",
+       "2  To protect his family from a powerful drug lor...  \n",
+       "3  Feuds, flirtations and toilet talk go down amo...  \n",
+       "4  In a city of coaching centers known to train I...  "
+      ]
+     },
+     "execution_count": 3,
+     "metadata": {},
+     "output_type": "execute_result"
+    }
+   ],
+   "source": [
+    "df = pd.read_csv('/kaggle/input/netflix-shows//netflix_titles.csv')\n",
+    "df.head()"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 4,
+   "id": "a1a811f7",
+   "metadata": {
+    "execution": {
+     "iopub.execute_input": "2024-10-13T14:08:04.308638Z",
+     "iopub.status.busy": "2024-10-13T14:08:04.308170Z",
+     "iopub.status.idle": "2024-10-13T14:08:04.314785Z",
+     "shell.execute_reply": "2024-10-13T14:08:04.313828Z"
+    },
+    "papermill": {
+     "duration": 0.020541,
+     "end_time": "2024-10-13T14:08:04.317131",
+     "exception": false,
+     "start_time": "2024-10-13T14:08:04.296590",
+     "status": "completed"
+    },
+    "tags": []
+   },
+   "outputs": [
+    {
+     "data": {
+      "text/plain": [
+       "(8807, 12)"
+      ]
+     },
+     "execution_count": 4,
+     "metadata": {},
+     "output_type": "execute_result"
+    }
+   ],
+   "source": [
+    "df.shape"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 5,
+   "id": "c9a8e702",
+   "metadata": {
+    "execution": {
+     "iopub.execute_input": "2024-10-13T14:08:04.341212Z",
+     "iopub.status.busy": "2024-10-13T14:08:04.340351Z",
+     "iopub.status.idle": "2024-10-13T14:08:04.347685Z",
+     "shell.execute_reply": "2024-10-13T14:08:04.346589Z"
+    },
+    "papermill": {
+     "duration": 0.021249,
+     "end_time": "2024-10-13T14:08:04.349965",
+     "exception": false,
+     "start_time": "2024-10-13T14:08:04.328716",
+     "status": "completed"
+    },
+    "tags": []
+   },
+   "outputs": [
+    {
+     "data": {
+      "text/plain": [
+       "Index(['show_id', 'type', 'title', 'director', 'cast', 'country', 'date_added',\n",
+       "       'release_year', 'rating', 'duration', 'listed_in', 'description'],\n",
+       "      dtype='object')"
+      ]
+     },
+     "execution_count": 5,
+     "metadata": {},
+     "output_type": "execute_result"
+    }
+   ],
+   "source": [
+    "df.columns"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "id": "dfb77d27",
+   "metadata": {
+    "papermill": {
+     "duration": 0.010496,
+     "end_time": "2024-10-13T14:08:04.371081",
+     "exception": false,
+     "start_time": "2024-10-13T14:08:04.360585",
+     "status": "completed"
+    },
+    "tags": []
+   },
+   "source": [
+    "# **DATA PREPROCESSING**"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 6,
+   "id": "70e9c721",
+   "metadata": {
+    "execution": {
+     "iopub.execute_input": "2024-10-13T14:08:04.394207Z",
+     "iopub.status.busy": "2024-10-13T14:08:04.393801Z",
+     "iopub.status.idle": "2024-10-13T14:08:04.433450Z",
+     "shell.execute_reply": "2024-10-13T14:08:04.432110Z"
+    },
+    "papermill": {
+     "duration": 0.054453,
+     "end_time": "2024-10-13T14:08:04.436244",
+     "exception": false,
+     "start_time": "2024-10-13T14:08:04.381791",
+     "status": "completed"
+    },
+    "tags": []
+   },
+   "outputs": [
+    {
+     "name": "stdout",
+     "output_type": "stream",
+     "text": [
+      "<class 'pandas.core.frame.DataFrame'>\n",
+      "RangeIndex: 8807 entries, 0 to 8806\n",
+      "Data columns (total 12 columns):\n",
+      " #   Column        Non-Null Count  Dtype \n",
+      "---  ------        --------------  ----- \n",
+      " 0   show_id       8807 non-null   object\n",
+      " 1   type          8807 non-null   object\n",
+      " 2   title         8807 non-null   object\n",
+      " 3   director      6173 non-null   object\n",
+      " 4   cast          7982 non-null   object\n",
+      " 5   country       7976 non-null   object\n",
+      " 6   date_added    8797 non-null   object\n",
+      " 7   release_year  8807 non-null   int64 \n",
+      " 8   rating        8803 non-null   object\n",
+      " 9   duration      8804 non-null   object\n",
+      " 10  listed_in     8807 non-null   object\n",
+      " 11  description   8807 non-null   object\n",
+      "dtypes: int64(1), object(11)\n",
+      "memory usage: 825.8+ KB\n"
+     ]
+    }
+   ],
+   "source": [
+    "df.info()"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 7,
+   "id": "f8d419f5",
+   "metadata": {
+    "execution": {
+     "iopub.execute_input": "2024-10-13T14:08:04.460452Z",
+     "iopub.status.busy": "2024-10-13T14:08:04.459657Z",
+     "iopub.status.idle": "2024-10-13T14:08:04.480192Z",
+     "shell.execute_reply": "2024-10-13T14:08:04.479123Z"
+    },
+    "papermill": {
+     "duration": 0.035124,
+     "end_time": "2024-10-13T14:08:04.482516",
+     "exception": false,
+     "start_time": "2024-10-13T14:08:04.447392",
+     "status": "completed"
+    },
+    "tags": []
+   },
+   "outputs": [
+    {
+     "data": {
+      "text/plain": [
+       "show_id            0\n",
+       "type               0\n",
+       "title              0\n",
+       "director        2634\n",
+       "cast             825\n",
+       "country          831\n",
+       "date_added        10\n",
+       "release_year       0\n",
+       "rating             4\n",
+       "duration           3\n",
+       "listed_in          0\n",
+       "description        0\n",
+       "dtype: int64"
+      ]
+     },
+     "execution_count": 7,
+     "metadata": {},
+     "output_type": "execute_result"
+    }
+   ],
+   "source": [
+    "df.isnull().sum()"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 8,
+   "id": "31a89095",
+   "metadata": {
+    "execution": {
+     "iopub.execute_input": "2024-10-13T14:08:04.507120Z",
+     "iopub.status.busy": "2024-10-13T14:08:04.506172Z",
+     "iopub.status.idle": "2024-10-13T14:08:04.538028Z",
+     "shell.execute_reply": "2024-10-13T14:08:04.536890Z"
+    },
+    "papermill": {
+     "duration": 0.046841,
+     "end_time": "2024-10-13T14:08:04.540510",
+     "exception": false,
+     "start_time": "2024-10-13T14:08:04.493669",
+     "status": "completed"
+    },
+    "tags": []
+   },
+   "outputs": [
+    {
+     "data": {
+      "text/plain": [
+       "0"
+      ]
+     },
+     "execution_count": 8,
+     "metadata": {},
+     "output_type": "execute_result"
+    }
+   ],
+   "source": [
+    "df.duplicated().sum()"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 9,
+   "id": "ce3ce6f8",
+   "metadata": {
+    "execution": {
+     "iopub.execute_input": "2024-10-13T14:08:04.564621Z",
+     "iopub.status.busy": "2024-10-13T14:08:04.564206Z",
+     "iopub.status.idle": "2024-10-13T14:08:04.587219Z",
+     "shell.execute_reply": "2024-10-13T14:08:04.586265Z"
+    },
+    "papermill": {
+     "duration": 0.037908,
+     "end_time": "2024-10-13T14:08:04.589635",
+     "exception": false,
+     "start_time": "2024-10-13T14:08:04.551727",
+     "status": "completed"
+    },
+    "tags": []
+   },
+   "outputs": [
+    {
+     "data": {
+      "text/plain": [
+       "show_id          0.000000\n",
+       "type             0.000000\n",
+       "title            0.000000\n",
+       "director        29.908028\n",
+       "cast             9.367549\n",
+       "country          9.435676\n",
+       "date_added       0.113546\n",
+       "release_year     0.000000\n",
+       "rating           0.045418\n",
+       "duration         0.034064\n",
+       "listed_in        0.000000\n",
+       "description      0.000000\n",
+       "dtype: float64"
+      ]
+     },
+     "execution_count": 9,
+     "metadata": {},
+     "output_type": "execute_result"
+    }
+   ],
+   "source": [
+    "nan_counts = df.isnull().sum()\n",
+    "nan_precentage = (nan_counts/len(df))*100\n",
+    "nan_precentage"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 10,
+   "id": "91d64efb",
+   "metadata": {
+    "execution": {
+     "iopub.execute_input": "2024-10-13T14:08:04.614163Z",
+     "iopub.status.busy": "2024-10-13T14:08:04.613743Z",
+     "iopub.status.idle": "2024-10-13T14:08:04.629328Z",
+     "shell.execute_reply": "2024-10-13T14:08:04.628294Z"
+    },
+    "papermill": {
+     "duration": 0.031011,
+     "end_time": "2024-10-13T14:08:04.631953",
+     "exception": false,
+     "start_time": "2024-10-13T14:08:04.600942",
+     "status": "completed"
+    },
+    "tags": []
+   },
+   "outputs": [
+    {
+     "data": {
+      "text/plain": [
+       "director\n",
+       "director not specified            2634\n",
+       "Rajiv Chilaka                       19\n",
+       "Raúl Campos, Jan Suter              18\n",
+       "Suhas Kadav                         16\n",
+       "Marcus Raboy                        16\n",
+       "                                  ... \n",
+       "Raymie Muzquiz, Stu Livingston       1\n",
+       "Joe Menendez                         1\n",
+       "Eric Bross                           1\n",
+       "Will Eisenberg                       1\n",
+       "Mozez Singh                          1\n",
+       "Name: count, Length: 4529, dtype: int64"
+      ]
+     },
+     "execution_count": 10,
+     "metadata": {},
+     "output_type": "execute_result"
+    }
+   ],
+   "source": [
+    "df['director']=df['director'].fillna('director not specified')\n",
+    "df['director'].value_counts()"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 11,
+   "id": "7ae438e2",
+   "metadata": {
+    "execution": {
+     "iopub.execute_input": "2024-10-13T14:08:04.658597Z",
+     "iopub.status.busy": "2024-10-13T14:08:04.657336Z",
+     "iopub.status.idle": "2024-10-13T14:08:04.673013Z",
+     "shell.execute_reply": "2024-10-13T14:08:04.671786Z"
+    },
+    "papermill": {
+     "duration": 0.031642,
+     "end_time": "2024-10-13T14:08:04.675696",
+     "exception": false,
+     "start_time": "2024-10-13T14:08:04.644054",
+     "status": "completed"
+    },
+    "tags": []
+   },
+   "outputs": [
+    {
+     "data": {
+      "text/plain": [
+       "cast\n",
+       "director not specified            2634\n",
+       "Rajiv Chilaka                       19\n",
+       "Raúl Campos, Jan Suter              18\n",
+       "Suhas Kadav                         16\n",
+       "Marcus Raboy                        16\n",
+       "                                  ... \n",
+       "Raymie Muzquiz, Stu Livingston       1\n",
+       "Joe Menendez                         1\n",
+       "Eric Bross                           1\n",
+       "Will Eisenberg                       1\n",
+       "Mozez Singh                          1\n",
+       "Name: count, Length: 4529, dtype: int64"
+      ]
+     },
+     "execution_count": 11,
+     "metadata": {},
+     "output_type": "execute_result"
+    }
+   ],
+   "source": [
+    "df['cast']=df['director'].fillna('cast not specified')\n",
+    "df['cast'].value_counts()"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 12,
+   "id": "c340bd81",
+   "metadata": {
+    "execution": {
+     "iopub.execute_input": "2024-10-13T14:08:04.701404Z",
+     "iopub.status.busy": "2024-10-13T14:08:04.700967Z",
+     "iopub.status.idle": "2024-10-13T14:08:04.709179Z",
+     "shell.execute_reply": "2024-10-13T14:08:04.707920Z"
+    },
+    "papermill": {
+     "duration": 0.024429,
+     "end_time": "2024-10-13T14:08:04.712093",
+     "exception": false,
+     "start_time": "2024-10-13T14:08:04.687664",
+     "status": "completed"
+    },
+    "tags": []
+   },
+   "outputs": [],
+   "source": [
+    "df['country']=df['country'].fillna('The country is unknown')"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 13,
+   "id": "0f9c7c02",
+   "metadata": {
+    "execution": {
+     "iopub.execute_input": "2024-10-13T14:08:04.738713Z",
+     "iopub.status.busy": "2024-10-13T14:08:04.737708Z",
+     "iopub.status.idle": "2024-10-13T14:08:04.765809Z",
+     "shell.execute_reply": "2024-10-13T14:08:04.764691Z"
+    },
+    "papermill": {
+     "duration": 0.044389,
+     "end_time": "2024-10-13T14:08:04.768529",
+     "exception": false,
+     "start_time": "2024-10-13T14:08:04.724140",
+     "status": "completed"
+    },
+    "tags": []
+   },
+   "outputs": [
+    {
+     "data": {
+      "text/plain": [
+       "duration\n",
+       "min        6128\n",
+       "Season     1793\n",
+       "Seasons     883\n",
+       "Name: count, dtype: int64"
+      ]
+     },
+     "execution_count": 13,
+     "metadata": {},
+     "output_type": "execute_result"
+    }
+   ],
+   "source": [
+    "duration_values= df['duration'].str.extract('([^\\d]+)', expand=False).str.strip()\n",
+    "duration_values.value_counts()"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "id": "e4c68338",
+   "metadata": {
+    "papermill": {
+     "duration": 0.0118,
+     "end_time": "2024-10-13T14:08:04.792176",
+     "exception": false,
+     "start_time": "2024-10-13T14:08:04.780376",
+     "status": "completed"
+    },
+    "tags": []
+   },
+   "source": [
+    "# EXPLORATORY DATA ANALYSIS"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 14,
+   "id": "e650d300",
+   "metadata": {
+    "execution": {
+     "iopub.execute_input": "2024-10-13T14:08:04.817691Z",
+     "iopub.status.busy": "2024-10-13T14:08:04.817250Z",
+     "iopub.status.idle": "2024-10-13T14:08:04.827849Z",
+     "shell.execute_reply": "2024-10-13T14:08:04.826745Z"
+    },
+    "papermill": {
+     "duration": 0.026145,
+     "end_time": "2024-10-13T14:08:04.830280",
+     "exception": false,
+     "start_time": "2024-10-13T14:08:04.804135",
+     "status": "completed"
+    },
+    "tags": []
+   },
+   "outputs": [
+    {
+     "data": {
+      "text/plain": [
+       "rating\n",
+       "TV-MA       3207\n",
+       "TV-14       2160\n",
+       "TV-PG        863\n",
+       "R            799\n",
+       "PG-13        490\n",
+       "TV-Y7        334\n",
+       "TV-Y         307\n",
+       "PG           287\n",
+       "TV-G         220\n",
+       "NR            80\n",
+       "G             41\n",
+       "TV-Y7-FV       6\n",
+       "NC-17          3\n",
+       "UR             3\n",
+       "74 min         1\n",
+       "84 min         1\n",
+       "66 min         1\n",
+       "Name: count, dtype: int64"
+      ]
+     },
+     "execution_count": 14,
+     "metadata": {},
+     "output_type": "execute_result"
+    }
+   ],
+   "source": [
+    "x = df['rating'].value_counts()\n",
+    "x"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 15,
+   "id": "636424fa",
+   "metadata": {
+    "execution": {
+     "iopub.execute_input": "2024-10-13T14:08:04.856930Z",
+     "iopub.status.busy": "2024-10-13T14:08:04.856494Z",
+     "iopub.status.idle": "2024-10-13T14:08:06.898398Z",
+     "shell.execute_reply": "2024-10-13T14:08:06.897523Z"
+    },
+    "papermill": {
+     "duration": 2.057825,
+     "end_time": "2024-10-13T14:08:06.900890",
+     "exception": false,
+     "start_time": "2024-10-13T14:08:04.843065",
+     "status": "completed"
+    },
+    "tags": []
+   },
+   "outputs": [
+    {
+     "data": {
+      "text/html": [
+       "        <script type=\"text/javascript\">\n",
+       "        window.PlotlyConfig = {MathJaxConfig: 'local'};\n",
+       "        if (window.MathJax && window.MathJax.Hub && window.MathJax.Hub.Config) {window.MathJax.Hub.Config({SVG: {font: \"STIX-Web\"}});}\n",
+       "        if (typeof require !== 'undefined') {\n",
+       "        require.undef(\"plotly\");\n",
+       "        requirejs.config({\n",
+       "            paths: {\n",
+       "                'plotly': ['https://cdn.plot.ly/plotly-2.32.0.min']\n",
+       "            }\n",
+       "        });\n",
+       "        require(['plotly'], function(Plotly) {\n",
+       "            window._Plotly = Plotly;\n",
+       "        });\n",
+       "        }\n",
+       "        </script>\n",
+       "        "
+      ]
+     },
+     "metadata": {},
+     "output_type": "display_data"
+    },
+    {
+     "data": {
+      "text/html": [
+       "<div>                            <div id=\"6cf654f0-573b-4d0e-af97-218baf5a8e9f\" class=\"plotly-graph-div\" style=\"height:525px; width:100%;\"></div>            <script type=\"text/javascript\">                require([\"plotly\"], function(Plotly) {                    window.PLOTLYENV=window.PLOTLYENV || {};                                    if (document.getElementById(\"6cf654f0-573b-4d0e-af97-218baf5a8e9f\")) {                    Plotly.newPlot(                        \"6cf654f0-573b-4d0e-af97-218baf5a8e9f\",                        [{\"domain\":{\"x\":[0.0,1.0],\"y\":[0.0,1.0]},\"hovertemplate\":\"rating=%{label}\\u003cbr\\u003evalue=%{value}\\u003cextra\\u003e\\u003c\\u002fextra\\u003e\",\"labels\":[\"TV-MA\",\"TV-14\",\"TV-PG\",\"R\",\"PG-13\",\"TV-Y7\",\"TV-Y\",\"PG\",\"TV-G\",\"NR\",\"G\",\"TV-Y7-FV\",\"NC-17\",\"UR\",\"74 min\",\"84 min\",\"66 min\"],\"legendgroup\":\"\",\"name\":\"\",\"showlegend\":true,\"values\":[3207,2160,863,799,490,334,307,287,220,80,41,6,3,3,1,1,1],\"type\":\"pie\"}],                        {\"template\":{\"data\":{\"histogram2dcontour\":[{\"type\":\"histogram2dcontour\",\"colorbar\":{\"outlinewidth\":0,\"ticks\":\"\"},\"colorscale\":[[0.0,\"#0d0887\"],[0.1111111111111111,\"#46039f\"],[0.2222222222222222,\"#7201a8\"],[0.3333333333333333,\"#9c179e\"],[0.4444444444444444,\"#bd3786\"],[0.5555555555555556,\"#d8576b\"],[0.6666666666666666,\"#ed7953\"],[0.7777777777777778,\"#fb9f3a\"],[0.8888888888888888,\"#fdca26\"],[1.0,\"#f0f921\"]]}],\"choropleth\":[{\"type\":\"choropleth\",\"colorbar\":{\"outlinewidth\":0,\"ticks\":\"\"}}],\"histogram2d\":[{\"type\":\"histogram2d\",\"colorbar\":{\"outlinewidth\":0,\"ticks\":\"\"},\"colorscale\":[[0.0,\"#0d0887\"],[0.1111111111111111,\"#46039f\"],[0.2222222222222222,\"#7201a8\"],[0.3333333333333333,\"#9c179e\"],[0.4444444444444444,\"#bd3786\"],[0.5555555555555556,\"#d8576b\"],[0.6666666666666666,\"#ed7953\"],[0.7777777777777778,\"#fb9f3a\"],[0.8888888888888888,\"#fdca26\"],[1.0,\"#f0f921\"]]}],\"heatmap\":[{\"type\":\"heatmap\",\"colorbar\":{\"outlinewidth\":0,\"ticks\":\"\"},\"colorscale\":[[0.0,\"#0d0887\"],[0.1111111111111111,\"#46039f\"],[0.2222222222222222,\"#7201a8\"],[0.3333333333333333,\"#9c179e\"],[0.4444444444444444,\"#bd3786\"],[0.5555555555555556,\"#d8576b\"],[0.6666666666666666,\"#ed7953\"],[0.7777777777777778,\"#fb9f3a\"],[0.8888888888888888,\"#fdca26\"],[1.0,\"#f0f921\"]]}],\"heatmapgl\":[{\"type\":\"heatmapgl\",\"colorbar\":{\"outlinewidth\":0,\"ticks\":\"\"},\"colorscale\":[[0.0,\"#0d0887\"],[0.1111111111111111,\"#46039f\"],[0.2222222222222222,\"#7201a8\"],[0.3333333333333333,\"#9c179e\"],[0.4444444444444444,\"#bd3786\"],[0.5555555555555556,\"#d8576b\"],[0.6666666666666666,\"#ed7953\"],[0.7777777777777778,\"#fb9f3a\"],[0.8888888888888888,\"#fdca26\"],[1.0,\"#f0f921\"]]}],\"contourcarpet\":[{\"type\":\"contourcarpet\",\"colorbar\":{\"outlinewidth\":0,\"ticks\":\"\"}}],\"contour\":[{\"type\":\"contour\",\"colorbar\":{\"outlinewidth\":0,\"ticks\":\"\"},\"colorscale\":[[0.0,\"#0d0887\"],[0.1111111111111111,\"#46039f\"],[0.2222222222222222,\"#7201a8\"],[0.3333333333333333,\"#9c179e\"],[0.4444444444444444,\"#bd3786\"],[0.5555555555555556,\"#d8576b\"],[0.6666666666666666,\"#ed7953\"],[0.7777777777777778,\"#fb9f3a\"],[0.8888888888888888,\"#fdca26\"],[1.0,\"#f0f921\"]]}],\"surface\":[{\"type\":\"surface\",\"colorbar\":{\"outlinewidth\":0,\"ticks\":\"\"},\"colorscale\":[[0.0,\"#0d0887\"],[0.1111111111111111,\"#46039f\"],[0.2222222222222222,\"#7201a8\"],[0.3333333333333333,\"#9c179e\"],[0.4444444444444444,\"#bd3786\"],[0.5555555555555556,\"#d8576b\"],[0.6666666666666666,\"#ed7953\"],[0.7777777777777778,\"#fb9f3a\"],[0.8888888888888888,\"#fdca26\"],[1.0,\"#f0f921\"]]}],\"mesh3d\":[{\"type\":\"mesh3d\",\"colorbar\":{\"outlinewidth\":0,\"ticks\":\"\"}}],\"scatter\":[{\"fillpattern\":{\"fillmode\":\"overlay\",\"size\":10,\"solidity\":0.2},\"type\":\"scatter\"}],\"parcoords\":[{\"type\":\"parcoords\",\"line\":{\"colorbar\":{\"outlinewidth\":0,\"ticks\":\"\"}}}],\"scatterpolargl\":[{\"type\":\"scatterpolargl\",\"marker\":{\"colorbar\":{\"outlinewidth\":0,\"ticks\":\"\"}}}],\"bar\":[{\"error_x\":{\"color\":\"#2a3f5f\"},\"error_y\":{\"color\":\"#2a3f5f\"},\"marker\":{\"line\":{\"color\":\"#E5ECF6\",\"width\":0.5},\"pattern\":{\"fillmode\":\"overlay\",\"size\":10,\"solidity\":0.2}},\"type\":\"bar\"}],\"scattergeo\":[{\"type\":\"scattergeo\",\"marker\":{\"colorbar\":{\"outlinewidth\":0,\"ticks\":\"\"}}}],\"scatterpolar\":[{\"type\":\"scatterpolar\",\"marker\":{\"colorbar\":{\"outlinewidth\":0,\"ticks\":\"\"}}}],\"histogram\":[{\"marker\":{\"pattern\":{\"fillmode\":\"overlay\",\"size\":10,\"solidity\":0.2}},\"type\":\"histogram\"}],\"scattergl\":[{\"type\":\"scattergl\",\"marker\":{\"colorbar\":{\"outlinewidth\":0,\"ticks\":\"\"}}}],\"scatter3d\":[{\"type\":\"scatter3d\",\"line\":{\"colorbar\":{\"outlinewidth\":0,\"ticks\":\"\"}},\"marker\":{\"colorbar\":{\"outlinewidth\":0,\"ticks\":\"\"}}}],\"scattermapbox\":[{\"type\":\"scattermapbox\",\"marker\":{\"colorbar\":{\"outlinewidth\":0,\"ticks\":\"\"}}}],\"scatterternary\":[{\"type\":\"scatterternary\",\"marker\":{\"colorbar\":{\"outlinewidth\":0,\"ticks\":\"\"}}}],\"scattercarpet\":[{\"type\":\"scattercarpet\",\"marker\":{\"colorbar\":{\"outlinewidth\":0,\"ticks\":\"\"}}}],\"carpet\":[{\"aaxis\":{\"endlinecolor\":\"#2a3f5f\",\"gridcolor\":\"white\",\"linecolor\":\"white\",\"minorgridcolor\":\"white\",\"startlinecolor\":\"#2a3f5f\"},\"baxis\":{\"endlinecolor\":\"#2a3f5f\",\"gridcolor\":\"white\",\"linecolor\":\"white\",\"minorgridcolor\":\"white\",\"startlinecolor\":\"#2a3f5f\"},\"type\":\"carpet\"}],\"table\":[{\"cells\":{\"fill\":{\"color\":\"#EBF0F8\"},\"line\":{\"color\":\"white\"}},\"header\":{\"fill\":{\"color\":\"#C8D4E3\"},\"line\":{\"color\":\"white\"}},\"type\":\"table\"}],\"barpolar\":[{\"marker\":{\"line\":{\"color\":\"#E5ECF6\",\"width\":0.5},\"pattern\":{\"fillmode\":\"overlay\",\"size\":10,\"solidity\":0.2}},\"type\":\"barpolar\"}],\"pie\":[{\"automargin\":true,\"type\":\"pie\"}]},\"layout\":{\"autotypenumbers\":\"strict\",\"colorway\":[\"#636efa\",\"#EF553B\",\"#00cc96\",\"#ab63fa\",\"#FFA15A\",\"#19d3f3\",\"#FF6692\",\"#B6E880\",\"#FF97FF\",\"#FECB52\"],\"font\":{\"color\":\"#2a3f5f\"},\"hovermode\":\"closest\",\"hoverlabel\":{\"align\":\"left\"},\"paper_bgcolor\":\"white\",\"plot_bgcolor\":\"#E5ECF6\",\"polar\":{\"bgcolor\":\"#E5ECF6\",\"angularaxis\":{\"gridcolor\":\"white\",\"linecolor\":\"white\",\"ticks\":\"\"},\"radialaxis\":{\"gridcolor\":\"white\",\"linecolor\":\"white\",\"ticks\":\"\"}},\"ternary\":{\"bgcolor\":\"#E5ECF6\",\"aaxis\":{\"gridcolor\":\"white\",\"linecolor\":\"white\",\"ticks\":\"\"},\"baxis\":{\"gridcolor\":\"white\",\"linecolor\":\"white\",\"ticks\":\"\"},\"caxis\":{\"gridcolor\":\"white\",\"linecolor\":\"white\",\"ticks\":\"\"}},\"coloraxis\":{\"colorbar\":{\"outlinewidth\":0,\"ticks\":\"\"}},\"colorscale\":{\"sequential\":[[0.0,\"#0d0887\"],[0.1111111111111111,\"#46039f\"],[0.2222222222222222,\"#7201a8\"],[0.3333333333333333,\"#9c179e\"],[0.4444444444444444,\"#bd3786\"],[0.5555555555555556,\"#d8576b\"],[0.6666666666666666,\"#ed7953\"],[0.7777777777777778,\"#fb9f3a\"],[0.8888888888888888,\"#fdca26\"],[1.0,\"#f0f921\"]],\"sequentialminus\":[[0.0,\"#0d0887\"],[0.1111111111111111,\"#46039f\"],[0.2222222222222222,\"#7201a8\"],[0.3333333333333333,\"#9c179e\"],[0.4444444444444444,\"#bd3786\"],[0.5555555555555556,\"#d8576b\"],[0.6666666666666666,\"#ed7953\"],[0.7777777777777778,\"#fb9f3a\"],[0.8888888888888888,\"#fdca26\"],[1.0,\"#f0f921\"]],\"diverging\":[[0,\"#8e0152\"],[0.1,\"#c51b7d\"],[0.2,\"#de77ae\"],[0.3,\"#f1b6da\"],[0.4,\"#fde0ef\"],[0.5,\"#f7f7f7\"],[0.6,\"#e6f5d0\"],[0.7,\"#b8e186\"],[0.8,\"#7fbc41\"],[0.9,\"#4d9221\"],[1,\"#276419\"]]},\"xaxis\":{\"gridcolor\":\"white\",\"linecolor\":\"white\",\"ticks\":\"\",\"title\":{\"standoff\":15},\"zerolinecolor\":\"white\",\"automargin\":true,\"zerolinewidth\":2},\"yaxis\":{\"gridcolor\":\"white\",\"linecolor\":\"white\",\"ticks\":\"\",\"title\":{\"standoff\":15},\"zerolinecolor\":\"white\",\"automargin\":true,\"zerolinewidth\":2},\"scene\":{\"xaxis\":{\"backgroundcolor\":\"#E5ECF6\",\"gridcolor\":\"white\",\"linecolor\":\"white\",\"showbackground\":true,\"ticks\":\"\",\"zerolinecolor\":\"white\",\"gridwidth\":2},\"yaxis\":{\"backgroundcolor\":\"#E5ECF6\",\"gridcolor\":\"white\",\"linecolor\":\"white\",\"showbackground\":true,\"ticks\":\"\",\"zerolinecolor\":\"white\",\"gridwidth\":2},\"zaxis\":{\"backgroundcolor\":\"#E5ECF6\",\"gridcolor\":\"white\",\"linecolor\":\"white\",\"showbackground\":true,\"ticks\":\"\",\"zerolinecolor\":\"white\",\"gridwidth\":2}},\"shapedefaults\":{\"line\":{\"color\":\"#2a3f5f\"}},\"annotationdefaults\":{\"arrowcolor\":\"#2a3f5f\",\"arrowhead\":0,\"arrowwidth\":1},\"geo\":{\"bgcolor\":\"white\",\"landcolor\":\"#E5ECF6\",\"subunitcolor\":\"white\",\"showland\":true,\"showlakes\":true,\"lakecolor\":\"white\"},\"title\":{\"x\":0.05},\"mapbox\":{\"style\":\"light\"}}},\"legend\":{\"tracegroupgap\":0},\"title\":{\"text\":\"Distribution of content ratings on Netflix\"}},                        {\"responsive\": true}                    ).then(function(){\n",
+       "                            \n",
+       "var gd = document.getElementById('6cf654f0-573b-4d0e-af97-218baf5a8e9f');\n",
+       "var x = new MutationObserver(function (mutations, observer) {{\n",
+       "        var display = window.getComputedStyle(gd).display;\n",
+       "        if (!display || display === 'none') {{\n",
+       "            console.log([gd, 'removed!']);\n",
+       "            Plotly.purge(gd);\n",
+       "            observer.disconnect();\n",
+       "        }}\n",
+       "}});\n",
+       "\n",
+       "// Listen for the removal of the full notebook cells\n",
+       "var notebookContainer = gd.closest('#notebook-container');\n",
+       "if (notebookContainer) {{\n",
+       "    x.observe(notebookContainer, {childList: true});\n",
+       "}}\n",
+       "\n",
+       "// Listen for the clearing of the current output cell\n",
+       "var outputEl = gd.closest('.output');\n",
+       "if (outputEl) {{\n",
+       "    x.observe(outputEl, {childList: true});\n",
+       "}}\n",
+       "\n",
+       "                        })                };                });            </script>        </div>"
+      ]
+     },
+     "metadata": {},
+     "output_type": "display_data"
+    }
+   ],
+   "source": [
+    "pie = px.pie(x,values=x.values,names=x.index ,title=\"Distribution of content ratings on Netflix\")\n",
+    "pie.show()"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 16,
+   "id": "b1861ddf",
+   "metadata": {
+    "execution": {
+     "iopub.execute_input": "2024-10-13T14:08:06.928196Z",
+     "iopub.status.busy": "2024-10-13T14:08:06.927305Z",
+     "iopub.status.idle": "2024-10-13T14:08:06.977804Z",
+     "shell.execute_reply": "2024-10-13T14:08:06.976532Z"
+    },
+    "papermill": {
+     "duration": 0.067062,
+     "end_time": "2024-10-13T14:08:06.980692",
+     "exception": false,
+     "start_time": "2024-10-13T14:08:06.913630",
+     "status": "completed"
+    },
+    "tags": []
+   },
+   "outputs": [
+    {
+     "data": {
+      "text/html": [
+       "<div>\n",
+       "<style scoped>\n",
+       "    .dataframe tbody tr th:only-of-type {\n",
+       "        vertical-align: middle;\n",
+       "    }\n",
+       "\n",
+       "    .dataframe tbody tr th {\n",
+       "        vertical-align: top;\n",
+       "    }\n",
+       "\n",
+       "    .dataframe thead th {\n",
+       "        text-align: right;\n",
+       "    }\n",
+       "</style>\n",
+       "<table border=\"1\" class=\"dataframe\">\n",
+       "  <thead>\n",
+       "    <tr style=\"text-align: right;\">\n",
+       "      <th></th>\n",
+       "      <th></th>\n",
+       "      <th>0</th>\n",
+       "    </tr>\n",
+       "  </thead>\n",
+       "  <tbody>\n",
+       "    <tr>\n",
+       "      <th>0</th>\n",
+       "      <th>0</th>\n",
+       "      <td>Kirsten Johnson</td>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>1</th>\n",
+       "      <th>0</th>\n",
+       "      <td>director not specified</td>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>2</th>\n",
+       "      <th>0</th>\n",
+       "      <td>Julien Leclercq</td>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>3</th>\n",
+       "      <th>0</th>\n",
+       "      <td>director not specified</td>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>4</th>\n",
+       "      <th>0</th>\n",
+       "      <td>director not specified</td>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>...</th>\n",
+       "      <th>...</th>\n",
+       "      <td>...</td>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>8802</th>\n",
+       "      <th>0</th>\n",
+       "      <td>David Fincher</td>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>8803</th>\n",
+       "      <th>0</th>\n",
+       "      <td>director not specified</td>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>8804</th>\n",
+       "      <th>0</th>\n",
+       "      <td>Ruben Fleischer</td>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>8805</th>\n",
+       "      <th>0</th>\n",
+       "      <td>Peter Hewitt</td>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>8806</th>\n",
+       "      <th>0</th>\n",
+       "      <td>Mozez Singh</td>\n",
+       "    </tr>\n",
+       "  </tbody>\n",
+       "</table>\n",
+       "<p>9612 rows × 1 columns</p>\n",
+       "</div>"
+      ],
+      "text/plain": [
+       "                             0\n",
+       "0    0         Kirsten Johnson\n",
+       "1    0  director not specified\n",
+       "2    0         Julien Leclercq\n",
+       "3    0  director not specified\n",
+       "4    0  director not specified\n",
+       "...                        ...\n",
+       "8802 0           David Fincher\n",
+       "8803 0  director not specified\n",
+       "8804 0         Ruben Fleischer\n",
+       "8805 0            Peter Hewitt\n",
+       "8806 0             Mozez Singh\n",
+       "\n",
+       "[9612 rows x 1 columns]"
+      ]
+     },
+     "execution_count": 16,
+     "metadata": {},
+     "output_type": "execute_result"
+    }
+   ],
+   "source": [
+    "directors_list = pd.DataFrame()\n",
+    "directors_list = df['director'].str.split(',',expand=True).stack()\n",
+    "directors_list = directors_list.to_frame()\n",
+    "directors_list"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 17,
+   "id": "6100ff42",
+   "metadata": {
+    "execution": {
+     "iopub.execute_input": "2024-10-13T14:08:07.014790Z",
+     "iopub.status.busy": "2024-10-13T14:08:07.014070Z",
+     "iopub.status.idle": "2024-10-13T14:08:07.029881Z",
+     "shell.execute_reply": "2024-10-13T14:08:07.028613Z"
+    },
+    "papermill": {
+     "duration": 0.037308,
+     "end_time": "2024-10-13T14:08:07.034526",
+     "exception": false,
+     "start_time": "2024-10-13T14:08:06.997218",
+     "status": "completed"
+    },
+    "tags": []
+   },
+   "outputs": [
+    {
+     "data": {
+      "text/html": [
+       "<div>\n",
+       "<style scoped>\n",
+       "    .dataframe tbody tr th:only-of-type {\n",
+       "        vertical-align: middle;\n",
+       "    }\n",
+       "\n",
+       "    .dataframe tbody tr th {\n",
+       "        vertical-align: top;\n",
+       "    }\n",
+       "\n",
+       "    .dataframe thead th {\n",
+       "        text-align: right;\n",
+       "    }\n",
+       "</style>\n",
+       "<table border=\"1\" class=\"dataframe\">\n",
+       "  <thead>\n",
+       "    <tr style=\"text-align: right;\">\n",
+       "      <th></th>\n",
+       "      <th></th>\n",
+       "      <th>Director</th>\n",
+       "    </tr>\n",
+       "  </thead>\n",
+       "  <tbody>\n",
+       "    <tr>\n",
+       "      <th>0</th>\n",
+       "      <th>0</th>\n",
+       "      <td>Kirsten Johnson</td>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>1</th>\n",
+       "      <th>0</th>\n",
+       "      <td>director not specified</td>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>2</th>\n",
+       "      <th>0</th>\n",
+       "      <td>Julien Leclercq</td>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>3</th>\n",
+       "      <th>0</th>\n",
+       "      <td>director not specified</td>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>4</th>\n",
+       "      <th>0</th>\n",
+       "      <td>director not specified</td>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>...</th>\n",
+       "      <th>...</th>\n",
+       "      <td>...</td>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>8802</th>\n",
+       "      <th>0</th>\n",
+       "      <td>David Fincher</td>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>8803</th>\n",
+       "      <th>0</th>\n",
+       "      <td>director not specified</td>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>8804</th>\n",
+       "      <th>0</th>\n",
+       "      <td>Ruben Fleischer</td>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>8805</th>\n",
+       "      <th>0</th>\n",
+       "      <td>Peter Hewitt</td>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>8806</th>\n",
+       "      <th>0</th>\n",
+       "      <td>Mozez Singh</td>\n",
+       "    </tr>\n",
+       "  </tbody>\n",
+       "</table>\n",
+       "<p>9612 rows × 1 columns</p>\n",
+       "</div>"
+      ],
+      "text/plain": [
+       "                      Director\n",
+       "0    0         Kirsten Johnson\n",
+       "1    0  director not specified\n",
+       "2    0         Julien Leclercq\n",
+       "3    0  director not specified\n",
+       "4    0  director not specified\n",
+       "...                        ...\n",
+       "8802 0           David Fincher\n",
+       "8803 0  director not specified\n",
+       "8804 0         Ruben Fleischer\n",
+       "8805 0            Peter Hewitt\n",
+       "8806 0             Mozez Singh\n",
+       "\n",
+       "[9612 rows x 1 columns]"
+      ]
+     },
+     "execution_count": 17,
+     "metadata": {},
+     "output_type": "execute_result"
+    }
+   ],
+   "source": [
+    "directors_list.columns=['Director']\n",
+    "directors_list"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 18,
+   "id": "4b2e0111",
+   "metadata": {
+    "execution": {
+     "iopub.execute_input": "2024-10-13T14:08:07.065880Z",
+     "iopub.status.busy": "2024-10-13T14:08:07.065130Z",
+     "iopub.status.idle": "2024-10-13T14:08:07.090036Z",
+     "shell.execute_reply": "2024-10-13T14:08:07.089012Z"
+    },
+    "papermill": {
+     "duration": 0.041962,
+     "end_time": "2024-10-13T14:08:07.092540",
+     "exception": false,
+     "start_time": "2024-10-13T14:08:07.050578",
+     "status": "completed"
+    },
+    "tags": []
+   },
+   "outputs": [
+    {
+     "data": {
+      "text/html": [
+       "<div>\n",
+       "<style scoped>\n",
+       "    .dataframe tbody tr th:only-of-type {\n",
+       "        vertical-align: middle;\n",
+       "    }\n",
+       "\n",
+       "    .dataframe tbody tr th {\n",
+       "        vertical-align: top;\n",
+       "    }\n",
+       "\n",
+       "    .dataframe thead th {\n",
+       "        text-align: right;\n",
+       "    }\n",
+       "</style>\n",
+       "<table border=\"1\" class=\"dataframe\">\n",
+       "  <thead>\n",
+       "    <tr style=\"text-align: right;\">\n",
+       "      <th></th>\n",
+       "      <th>Director</th>\n",
+       "      <th>Total count</th>\n",
+       "    </tr>\n",
+       "  </thead>\n",
+       "  <tbody>\n",
+       "    <tr>\n",
+       "      <th>4020</th>\n",
+       "      <td>Rajiv Chilaka</td>\n",
+       "      <td>22</td>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>4067</th>\n",
+       "      <td>Raúl Campos</td>\n",
+       "      <td>18</td>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>261</th>\n",
+       "      <td>Jan Suter</td>\n",
+       "      <td>18</td>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>4651</th>\n",
+       "      <td>Suhas Kadav</td>\n",
+       "      <td>16</td>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>3235</th>\n",
+       "      <td>Marcus Raboy</td>\n",
+       "      <td>16</td>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>2450</th>\n",
+       "      <td>Jay Karas</td>\n",
+       "      <td>15</td>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>1382</th>\n",
+       "      <td>Cathy Garcia-Molina</td>\n",
+       "      <td>13</td>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>2447</th>\n",
+       "      <td>Jay Chapman</td>\n",
+       "      <td>12</td>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>3306</th>\n",
+       "      <td>Martin Scorsese</td>\n",
+       "      <td>12</td>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>5074</th>\n",
+       "      <td>Youssef Chahine</td>\n",
+       "      <td>12</td>\n",
+       "    </tr>\n",
+       "  </tbody>\n",
+       "</table>\n",
+       "</div>"
+      ],
+      "text/plain": [
+       "                 Director  Total count\n",
+       "4020        Rajiv Chilaka           22\n",
+       "4067          Raúl Campos           18\n",
+       "261             Jan Suter           18\n",
+       "4651          Suhas Kadav           16\n",
+       "3235         Marcus Raboy           16\n",
+       "2450            Jay Karas           15\n",
+       "1382  Cathy Garcia-Molina           13\n",
+       "2447          Jay Chapman           12\n",
+       "3306      Martin Scorsese           12\n",
+       "5074      Youssef Chahine           12"
+      ]
+     },
+     "execution_count": 18,
+     "metadata": {},
+     "output_type": "execute_result"
+    }
+   ],
+   "source": [
+    "directors = directors_list.groupby([\"Director\"]).size().reset_index(name ='Total count')\n",
+    "directors = directors[directors.Director!='director not specified']\n",
+    "directors = directors.sort_values(by=['Total count'],ascending = False)\n",
+    "top_10_directors = directors.head(10)\n",
+    "top_10_directors"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 19,
+   "id": "d18a7af9",
+   "metadata": {
+    "execution": {
+     "iopub.execute_input": "2024-10-13T14:08:07.122127Z",
+     "iopub.status.busy": "2024-10-13T14:08:07.121188Z",
+     "iopub.status.idle": "2024-10-13T14:08:07.225564Z",
+     "shell.execute_reply": "2024-10-13T14:08:07.224095Z"
+    },
+    "papermill": {
+     "duration": 0.122971,
+     "end_time": "2024-10-13T14:08:07.228661",
+     "exception": false,
+     "start_time": "2024-10-13T14:08:07.105690",
+     "status": "completed"
+    },
+    "tags": []
+   },
+   "outputs": [
+    {
+     "data": {
+      "text/html": [
+       "<div>                            <div id=\"4490d2b4-0356-41b3-931c-b421876502b9\" class=\"plotly-graph-div\" style=\"height:525px; width:100%;\"></div>            <script type=\"text/javascript\">                require([\"plotly\"], function(Plotly) {                    window.PLOTLYENV=window.PLOTLYENV || {};                                    if (document.getElementById(\"4490d2b4-0356-41b3-931c-b421876502b9\")) {                    Plotly.newPlot(                        \"4490d2b4-0356-41b3-931c-b421876502b9\",                        [{\"alignmentgroup\":\"True\",\"hovertemplate\":\"Total count=%{x}\\u003cbr\\u003eDirector=%{y}\\u003cextra\\u003e\\u003c\\u002fextra\\u003e\",\"legendgroup\":\"\",\"marker\":{\"color\":\"#636efa\",\"pattern\":{\"shape\":\"\"}},\"name\":\"\",\"offsetgroup\":\"\",\"orientation\":\"h\",\"showlegend\":false,\"textposition\":\"auto\",\"x\":[12,12,12,13,15,16,16,18,18,22],\"xaxis\":\"x\",\"y\":[\"Jay Chapman\",\"Martin Scorsese\",\"Youssef Chahine\",\"Cathy Garcia-Molina\",\"Jay Karas\",\"Suhas Kadav\",\"Marcus Raboy\",\"Raúl Campos\",\" Jan Suter\",\"Rajiv Chilaka\"],\"yaxis\":\"y\",\"type\":\"bar\"}],                        {\"template\":{\"data\":{\"histogram2dcontour\":[{\"type\":\"histogram2dcontour\",\"colorbar\":{\"outlinewidth\":0,\"ticks\":\"\"},\"colorscale\":[[0.0,\"#0d0887\"],[0.1111111111111111,\"#46039f\"],[0.2222222222222222,\"#7201a8\"],[0.3333333333333333,\"#9c179e\"],[0.4444444444444444,\"#bd3786\"],[0.5555555555555556,\"#d8576b\"],[0.6666666666666666,\"#ed7953\"],[0.7777777777777778,\"#fb9f3a\"],[0.8888888888888888,\"#fdca26\"],[1.0,\"#f0f921\"]]}],\"choropleth\":[{\"type\":\"choropleth\",\"colorbar\":{\"outlinewidth\":0,\"ticks\":\"\"}}],\"histogram2d\":[{\"type\":\"histogram2d\",\"colorbar\":{\"outlinewidth\":0,\"ticks\":\"\"},\"colorscale\":[[0.0,\"#0d0887\"],[0.1111111111111111,\"#46039f\"],[0.2222222222222222,\"#7201a8\"],[0.3333333333333333,\"#9c179e\"],[0.4444444444444444,\"#bd3786\"],[0.5555555555555556,\"#d8576b\"],[0.6666666666666666,\"#ed7953\"],[0.7777777777777778,\"#fb9f3a\"],[0.8888888888888888,\"#fdca26\"],[1.0,\"#f0f921\"]]}],\"heatmap\":[{\"type\":\"heatmap\",\"colorbar\":{\"outlinewidth\":0,\"ticks\":\"\"},\"colorscale\":[[0.0,\"#0d0887\"],[0.1111111111111111,\"#46039f\"],[0.2222222222222222,\"#7201a8\"],[0.3333333333333333,\"#9c179e\"],[0.4444444444444444,\"#bd3786\"],[0.5555555555555556,\"#d8576b\"],[0.6666666666666666,\"#ed7953\"],[0.7777777777777778,\"#fb9f3a\"],[0.8888888888888888,\"#fdca26\"],[1.0,\"#f0f921\"]]}],\"heatmapgl\":[{\"type\":\"heatmapgl\",\"colorbar\":{\"outlinewidth\":0,\"ticks\":\"\"},\"colorscale\":[[0.0,\"#0d0887\"],[0.1111111111111111,\"#46039f\"],[0.2222222222222222,\"#7201a8\"],[0.3333333333333333,\"#9c179e\"],[0.4444444444444444,\"#bd3786\"],[0.5555555555555556,\"#d8576b\"],[0.6666666666666666,\"#ed7953\"],[0.7777777777777778,\"#fb9f3a\"],[0.8888888888888888,\"#fdca26\"],[1.0,\"#f0f921\"]]}],\"contourcarpet\":[{\"type\":\"contourcarpet\",\"colorbar\":{\"outlinewidth\":0,\"ticks\":\"\"}}],\"contour\":[{\"type\":\"contour\",\"colorbar\":{\"outlinewidth\":0,\"ticks\":\"\"},\"colorscale\":[[0.0,\"#0d0887\"],[0.1111111111111111,\"#46039f\"],[0.2222222222222222,\"#7201a8\"],[0.3333333333333333,\"#9c179e\"],[0.4444444444444444,\"#bd3786\"],[0.5555555555555556,\"#d8576b\"],[0.6666666666666666,\"#ed7953\"],[0.7777777777777778,\"#fb9f3a\"],[0.8888888888888888,\"#fdca26\"],[1.0,\"#f0f921\"]]}],\"surface\":[{\"type\":\"surface\",\"colorbar\":{\"outlinewidth\":0,\"ticks\":\"\"},\"colorscale\":[[0.0,\"#0d0887\"],[0.1111111111111111,\"#46039f\"],[0.2222222222222222,\"#7201a8\"],[0.3333333333333333,\"#9c179e\"],[0.4444444444444444,\"#bd3786\"],[0.5555555555555556,\"#d8576b\"],[0.6666666666666666,\"#ed7953\"],[0.7777777777777778,\"#fb9f3a\"],[0.8888888888888888,\"#fdca26\"],[1.0,\"#f0f921\"]]}],\"mesh3d\":[{\"type\":\"mesh3d\",\"colorbar\":{\"outlinewidth\":0,\"ticks\":\"\"}}],\"scatter\":[{\"fillpattern\":{\"fillmode\":\"overlay\",\"size\":10,\"solidity\":0.2},\"type\":\"scatter\"}],\"parcoords\":[{\"type\":\"parcoords\",\"line\":{\"colorbar\":{\"outlinewidth\":0,\"ticks\":\"\"}}}],\"scatterpolargl\":[{\"type\":\"scatterpolargl\",\"marker\":{\"colorbar\":{\"outlinewidth\":0,\"ticks\":\"\"}}}],\"bar\":[{\"error_x\":{\"color\":\"#2a3f5f\"},\"error_y\":{\"color\":\"#2a3f5f\"},\"marker\":{\"line\":{\"color\":\"#E5ECF6\",\"width\":0.5},\"pattern\":{\"fillmode\":\"overlay\",\"size\":10,\"solidity\":0.2}},\"type\":\"bar\"}],\"scattergeo\":[{\"type\":\"scattergeo\",\"marker\":{\"colorbar\":{\"outlinewidth\":0,\"ticks\":\"\"}}}],\"scatterpolar\":[{\"type\":\"scatterpolar\",\"marker\":{\"colorbar\":{\"outlinewidth\":0,\"ticks\":\"\"}}}],\"histogram\":[{\"marker\":{\"pattern\":{\"fillmode\":\"overlay\",\"size\":10,\"solidity\":0.2}},\"type\":\"histogram\"}],\"scattergl\":[{\"type\":\"scattergl\",\"marker\":{\"colorbar\":{\"outlinewidth\":0,\"ticks\":\"\"}}}],\"scatter3d\":[{\"type\":\"scatter3d\",\"line\":{\"colorbar\":{\"outlinewidth\":0,\"ticks\":\"\"}},\"marker\":{\"colorbar\":{\"outlinewidth\":0,\"ticks\":\"\"}}}],\"scattermapbox\":[{\"type\":\"scattermapbox\",\"marker\":{\"colorbar\":{\"outlinewidth\":0,\"ticks\":\"\"}}}],\"scatterternary\":[{\"type\":\"scatterternary\",\"marker\":{\"colorbar\":{\"outlinewidth\":0,\"ticks\":\"\"}}}],\"scattercarpet\":[{\"type\":\"scattercarpet\",\"marker\":{\"colorbar\":{\"outlinewidth\":0,\"ticks\":\"\"}}}],\"carpet\":[{\"aaxis\":{\"endlinecolor\":\"#2a3f5f\",\"gridcolor\":\"white\",\"linecolor\":\"white\",\"minorgridcolor\":\"white\",\"startlinecolor\":\"#2a3f5f\"},\"baxis\":{\"endlinecolor\":\"#2a3f5f\",\"gridcolor\":\"white\",\"linecolor\":\"white\",\"minorgridcolor\":\"white\",\"startlinecolor\":\"#2a3f5f\"},\"type\":\"carpet\"}],\"table\":[{\"cells\":{\"fill\":{\"color\":\"#EBF0F8\"},\"line\":{\"color\":\"white\"}},\"header\":{\"fill\":{\"color\":\"#C8D4E3\"},\"line\":{\"color\":\"white\"}},\"type\":\"table\"}],\"barpolar\":[{\"marker\":{\"line\":{\"color\":\"#E5ECF6\",\"width\":0.5},\"pattern\":{\"fillmode\":\"overlay\",\"size\":10,\"solidity\":0.2}},\"type\":\"barpolar\"}],\"pie\":[{\"automargin\":true,\"type\":\"pie\"}]},\"layout\":{\"autotypenumbers\":\"strict\",\"colorway\":[\"#636efa\",\"#EF553B\",\"#00cc96\",\"#ab63fa\",\"#FFA15A\",\"#19d3f3\",\"#FF6692\",\"#B6E880\",\"#FF97FF\",\"#FECB52\"],\"font\":{\"color\":\"#2a3f5f\"},\"hovermode\":\"closest\",\"hoverlabel\":{\"align\":\"left\"},\"paper_bgcolor\":\"white\",\"plot_bgcolor\":\"#E5ECF6\",\"polar\":{\"bgcolor\":\"#E5ECF6\",\"angularaxis\":{\"gridcolor\":\"white\",\"linecolor\":\"white\",\"ticks\":\"\"},\"radialaxis\":{\"gridcolor\":\"white\",\"linecolor\":\"white\",\"ticks\":\"\"}},\"ternary\":{\"bgcolor\":\"#E5ECF6\",\"aaxis\":{\"gridcolor\":\"white\",\"linecolor\":\"white\",\"ticks\":\"\"},\"baxis\":{\"gridcolor\":\"white\",\"linecolor\":\"white\",\"ticks\":\"\"},\"caxis\":{\"gridcolor\":\"white\",\"linecolor\":\"white\",\"ticks\":\"\"}},\"coloraxis\":{\"colorbar\":{\"outlinewidth\":0,\"ticks\":\"\"}},\"colorscale\":{\"sequential\":[[0.0,\"#0d0887\"],[0.1111111111111111,\"#46039f\"],[0.2222222222222222,\"#7201a8\"],[0.3333333333333333,\"#9c179e\"],[0.4444444444444444,\"#bd3786\"],[0.5555555555555556,\"#d8576b\"],[0.6666666666666666,\"#ed7953\"],[0.7777777777777778,\"#fb9f3a\"],[0.8888888888888888,\"#fdca26\"],[1.0,\"#f0f921\"]],\"sequentialminus\":[[0.0,\"#0d0887\"],[0.1111111111111111,\"#46039f\"],[0.2222222222222222,\"#7201a8\"],[0.3333333333333333,\"#9c179e\"],[0.4444444444444444,\"#bd3786\"],[0.5555555555555556,\"#d8576b\"],[0.6666666666666666,\"#ed7953\"],[0.7777777777777778,\"#fb9f3a\"],[0.8888888888888888,\"#fdca26\"],[1.0,\"#f0f921\"]],\"diverging\":[[0,\"#8e0152\"],[0.1,\"#c51b7d\"],[0.2,\"#de77ae\"],[0.3,\"#f1b6da\"],[0.4,\"#fde0ef\"],[0.5,\"#f7f7f7\"],[0.6,\"#e6f5d0\"],[0.7,\"#b8e186\"],[0.8,\"#7fbc41\"],[0.9,\"#4d9221\"],[1,\"#276419\"]]},\"xaxis\":{\"gridcolor\":\"white\",\"linecolor\":\"white\",\"ticks\":\"\",\"title\":{\"standoff\":15},\"zerolinecolor\":\"white\",\"automargin\":true,\"zerolinewidth\":2},\"yaxis\":{\"gridcolor\":\"white\",\"linecolor\":\"white\",\"ticks\":\"\",\"title\":{\"standoff\":15},\"zerolinecolor\":\"white\",\"automargin\":true,\"zerolinewidth\":2},\"scene\":{\"xaxis\":{\"backgroundcolor\":\"#E5ECF6\",\"gridcolor\":\"white\",\"linecolor\":\"white\",\"showbackground\":true,\"ticks\":\"\",\"zerolinecolor\":\"white\",\"gridwidth\":2},\"yaxis\":{\"backgroundcolor\":\"#E5ECF6\",\"gridcolor\":\"white\",\"linecolor\":\"white\",\"showbackground\":true,\"ticks\":\"\",\"zerolinecolor\":\"white\",\"gridwidth\":2},\"zaxis\":{\"backgroundcolor\":\"#E5ECF6\",\"gridcolor\":\"white\",\"linecolor\":\"white\",\"showbackground\":true,\"ticks\":\"\",\"zerolinecolor\":\"white\",\"gridwidth\":2}},\"shapedefaults\":{\"line\":{\"color\":\"#2a3f5f\"}},\"annotationdefaults\":{\"arrowcolor\":\"#2a3f5f\",\"arrowhead\":0,\"arrowwidth\":1},\"geo\":{\"bgcolor\":\"white\",\"landcolor\":\"#E5ECF6\",\"subunitcolor\":\"white\",\"showland\":true,\"showlakes\":true,\"lakecolor\":\"white\"},\"title\":{\"x\":0.05},\"mapbox\":{\"style\":\"light\"}}},\"xaxis\":{\"anchor\":\"y\",\"domain\":[0.0,1.0],\"title\":{\"text\":\"Total count\"}},\"yaxis\":{\"anchor\":\"x\",\"domain\":[0.0,1.0],\"title\":{\"text\":\"Director\"}},\"legend\":{\"tracegroupgap\":0},\"title\":{\"text\":\"Total 10 Directors on Netflix \"},\"barmode\":\"relative\"},                        {\"responsive\": true}                    ).then(function(){\n",
+       "                            \n",
+       "var gd = document.getElementById('4490d2b4-0356-41b3-931c-b421876502b9');\n",
+       "var x = new MutationObserver(function (mutations, observer) {{\n",
+       "        var display = window.getComputedStyle(gd).display;\n",
+       "        if (!display || display === 'none') {{\n",
+       "            console.log([gd, 'removed!']);\n",
+       "            Plotly.purge(gd);\n",
+       "            observer.disconnect();\n",
+       "        }}\n",
+       "}});\n",
+       "\n",
+       "// Listen for the removal of the full notebook cells\n",
+       "var notebookContainer = gd.closest('#notebook-container');\n",
+       "if (notebookContainer) {{\n",
+       "    x.observe(notebookContainer, {childList: true});\n",
+       "}}\n",
+       "\n",
+       "// Listen for the clearing of the current output cell\n",
+       "var outputEl = gd.closest('.output');\n",
+       "if (outputEl) {{\n",
+       "    x.observe(outputEl, {childList: true});\n",
+       "}}\n",
+       "\n",
+       "                        })                };                });            </script>        </div>"
+      ]
+     },
+     "metadata": {},
+     "output_type": "display_data"
+    }
+   ],
+   "source": [
+    "top_10_directors = top_10_directors.sort_values(by=[\"Total count\"],ascending=True)\n",
+    "bar_char = px.bar(data_frame=top_10_directors,x='Total count' ,y='Director',title=\"Total 10 Directors on Netflix \" )\n",
+    "bar_char"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 20,
+   "id": "2b822982",
+   "metadata": {
+    "execution": {
+     "iopub.execute_input": "2024-10-13T14:08:07.265966Z",
+     "iopub.status.busy": "2024-10-13T14:08:07.265519Z",
+     "iopub.status.idle": "2024-10-13T14:08:07.304749Z",
+     "shell.execute_reply": "2024-10-13T14:08:07.303641Z"
+    },
+    "papermill": {
+     "duration": 0.059111,
+     "end_time": "2024-10-13T14:08:07.307321",
+     "exception": false,
+     "start_time": "2024-10-13T14:08:07.248210",
+     "status": "completed"
+    },
+    "tags": []
+   },
+   "outputs": [
+    {
+     "data": {
+      "text/html": [
+       "<div>\n",
+       "<style scoped>\n",
+       "    .dataframe tbody tr th:only-of-type {\n",
+       "        vertical-align: middle;\n",
+       "    }\n",
+       "\n",
+       "    .dataframe tbody tr th {\n",
+       "        vertical-align: top;\n",
+       "    }\n",
+       "\n",
+       "    .dataframe thead th {\n",
+       "        text-align: right;\n",
+       "    }\n",
+       "</style>\n",
+       "<table border=\"1\" class=\"dataframe\">\n",
+       "  <thead>\n",
+       "    <tr style=\"text-align: right;\">\n",
+       "      <th></th>\n",
+       "      <th></th>\n",
+       "      <th>Actors</th>\n",
+       "    </tr>\n",
+       "  </thead>\n",
+       "  <tbody>\n",
+       "    <tr>\n",
+       "      <th>0</th>\n",
+       "      <th>0</th>\n",
+       "      <td>Kirsten Johnson</td>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>1</th>\n",
+       "      <th>0</th>\n",
+       "      <td>director not specified</td>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>2</th>\n",
+       "      <th>0</th>\n",
+       "      <td>Julien Leclercq</td>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>3</th>\n",
+       "      <th>0</th>\n",
+       "      <td>director not specified</td>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>4</th>\n",
+       "      <th>0</th>\n",
+       "      <td>director not specified</td>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>...</th>\n",
+       "      <th>...</th>\n",
+       "      <td>...</td>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>8802</th>\n",
+       "      <th>0</th>\n",
+       "      <td>David Fincher</td>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>8803</th>\n",
+       "      <th>0</th>\n",
+       "      <td>director not specified</td>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>8804</th>\n",
+       "      <th>0</th>\n",
+       "      <td>Ruben Fleischer</td>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>8805</th>\n",
+       "      <th>0</th>\n",
+       "      <td>Peter Hewitt</td>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>8806</th>\n",
+       "      <th>0</th>\n",
+       "      <td>Mozez Singh</td>\n",
+       "    </tr>\n",
+       "  </tbody>\n",
+       "</table>\n",
+       "<p>9612 rows × 1 columns</p>\n",
+       "</div>"
+      ],
+      "text/plain": [
+       "                        Actors\n",
+       "0    0         Kirsten Johnson\n",
+       "1    0  director not specified\n",
+       "2    0         Julien Leclercq\n",
+       "3    0  director not specified\n",
+       "4    0  director not specified\n",
+       "...                        ...\n",
+       "8802 0           David Fincher\n",
+       "8803 0  director not specified\n",
+       "8804 0         Ruben Fleischer\n",
+       "8805 0            Peter Hewitt\n",
+       "8806 0             Mozez Singh\n",
+       "\n",
+       "[9612 rows x 1 columns]"
+      ]
+     },
+     "execution_count": 20,
+     "metadata": {},
+     "output_type": "execute_result"
+    }
+   ],
+   "source": [
+    "cast_list = pd.DataFrame()\n",
+    "cast_list = df['cast'].str.split(',',expand=True).stack()\n",
+    "cast_list = cast_list.to_frame()\n",
+    "cast_list.columns = ['Actors']\n",
+    "cast_list "
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 21,
+   "id": "9b24bd94",
+   "metadata": {
+    "execution": {
+     "iopub.execute_input": "2024-10-13T14:08:07.339959Z",
+     "iopub.status.busy": "2024-10-13T14:08:07.338951Z",
+     "iopub.status.idle": "2024-10-13T14:08:07.363787Z",
+     "shell.execute_reply": "2024-10-13T14:08:07.362564Z"
+    },
+    "papermill": {
+     "duration": 0.044802,
+     "end_time": "2024-10-13T14:08:07.366230",
+     "exception": false,
+     "start_time": "2024-10-13T14:08:07.321428",
+     "status": "completed"
+    },
+    "tags": []
+   },
+   "outputs": [
+    {
+     "data": {
+      "text/html": [
+       "<div>\n",
+       "<style scoped>\n",
+       "    .dataframe tbody tr th:only-of-type {\n",
+       "        vertical-align: middle;\n",
+       "    }\n",
+       "\n",
+       "    .dataframe tbody tr th {\n",
+       "        vertical-align: top;\n",
+       "    }\n",
+       "\n",
+       "    .dataframe thead th {\n",
+       "        text-align: right;\n",
+       "    }\n",
+       "</style>\n",
+       "<table border=\"1\" class=\"dataframe\">\n",
+       "  <thead>\n",
+       "    <tr style=\"text-align: right;\">\n",
+       "      <th></th>\n",
+       "      <th>Actors</th>\n",
+       "      <th>Total count</th>\n",
+       "    </tr>\n",
+       "  </thead>\n",
+       "  <tbody>\n",
+       "    <tr>\n",
+       "      <th>5108</th>\n",
+       "      <td>director not specified</td>\n",
+       "      <td>2634</td>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>4020</th>\n",
+       "      <td>Rajiv Chilaka</td>\n",
+       "      <td>22</td>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>261</th>\n",
+       "      <td>Jan Suter</td>\n",
+       "      <td>18</td>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>4067</th>\n",
+       "      <td>Raúl Campos</td>\n",
+       "      <td>18</td>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>4651</th>\n",
+       "      <td>Suhas Kadav</td>\n",
+       "      <td>16</td>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>...</th>\n",
+       "      <td>...</td>\n",
+       "      <td>...</td>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>2341</th>\n",
+       "      <td>J. Lee Thompson</td>\n",
+       "      <td>1</td>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>2342</th>\n",
+       "      <td>J. Michael Long</td>\n",
+       "      <td>1</td>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>610</th>\n",
+       "      <td>Songyos Sugmakanan</td>\n",
+       "      <td>1</td>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>609</th>\n",
+       "      <td>Smriti Keshari</td>\n",
+       "      <td>1</td>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>2560</th>\n",
+       "      <td>Joaquín Mazón</td>\n",
+       "      <td>1</td>\n",
+       "    </tr>\n",
+       "  </tbody>\n",
+       "</table>\n",
+       "<p>5121 rows × 2 columns</p>\n",
+       "</div>"
+      ],
+      "text/plain": [
+       "                      Actors  Total count\n",
+       "5108  director not specified         2634\n",
+       "4020           Rajiv Chilaka           22\n",
+       "261                Jan Suter           18\n",
+       "4067             Raúl Campos           18\n",
+       "4651             Suhas Kadav           16\n",
+       "...                      ...          ...\n",
+       "2341         J. Lee Thompson            1\n",
+       "2342         J. Michael Long            1\n",
+       "610       Songyos Sugmakanan            1\n",
+       "609           Smriti Keshari            1\n",
+       "2560           Joaquín Mazón            1\n",
+       "\n",
+       "[5121 rows x 2 columns]"
+      ]
+     },
+     "execution_count": 21,
+     "metadata": {},
+     "output_type": "execute_result"
+    }
+   ],
+   "source": [
+    "cast = cast_list.groupby(['Actors']).size().reset_index(name ='Total count')\n",
+    "cast = cast[cast['Actors']!='cast not specified']\n",
+    "cast = cast.sort_values(by=['Total count'],ascending = False)\n",
+    "cast "
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 22,
+   "id": "f0ae7ec5",
+   "metadata": {
+    "execution": {
+     "iopub.execute_input": "2024-10-13T14:08:07.396916Z",
+     "iopub.status.busy": "2024-10-13T14:08:07.396512Z",
+     "iopub.status.idle": "2024-10-13T14:08:07.686075Z",
+     "shell.execute_reply": "2024-10-13T14:08:07.684533Z"
+    },
+    "papermill": {
+     "duration": 0.308584,
+     "end_time": "2024-10-13T14:08:07.689417",
+     "exception": false,
+     "start_time": "2024-10-13T14:08:07.380833",
+     "status": "completed"
+    },
+    "tags": []
+   },
+   "outputs": [
+    {
+     "data": {
+      "image/png": "iVBORw0KGgoAAAANSUhEUgAAAkQAAAHHCAYAAABeLEexAAAAOXRFWHRTb2Z0d2FyZQBNYXRwbG90bGliIHZlcnNpb24zLjcuNSwgaHR0cHM6Ly9tYXRwbG90bGliLm9yZy/xnp5ZAAAACXBIWXMAAA9hAAAPYQGoP6dpAABGI0lEQVR4nO3deVhV5f7//9cGZRAEh5hURJMcMIc0UzRnCw3L0syBUnPoZGiZJ/N4Th+14eQ5mkOWaVmKdUDLsklLM1RMxCFKMwdyTEtBS4EcGIT790df9s8diIjoRtfzcV3rqn3f73Wv+95u4MXaay9sxhgjAAAAC3Nx9gQAAACcjUAEAAAsj0AEAAAsj0AEAAAsj0AEAAAsj0AEAAAsj0AEAAAsj0AEAAAsj0AEAAAsj0AEAAAsj0CEG8L+/fv1t7/9TTfffLM8PDzk4+Ojdu3a6dVXX9W5c+ccanNzczV79my1atVKlStXlre3t1q1aqXZs2crNze30Ng2m02jRo0q8rgffvihbDab1q1bZ28bMmSIbDabmjZtqqL+Ms6F43Xq1Ek2m+2S2+TJky/5HCxfvlzdu3dX9erV5eHhofr16+uZZ57R77//Xqi2YI5FbStXriz2OHXq1JHNZlO3bt2K7J8/f759rG+//bZQf2Jioh544AEFBATI3d1dderU0d/+9jcdPnzYXnP8+HFVqFBBDz/88EXn8ccff8jT01O9e/eWJMXExBQ65uTJk4t9XlNTU+21J06c0FNPPaWGDRvK09NT/v7+uuOOOzR+/HidPn262OfkQm+88YZsNptat2590ZqC40+fPr1QX0nWUalSJdWuXVv33nuvFi5cqOzs7EvOqySvM5vNphkzZshms+nrr7++6FgF/8afffZZscfcsGGDevTooZo1a8rDw8M+57i4uEJzu9jXWFHPR4GSvJYkaerUqbLZbPr+++8d2o0xqlq1qmw2mw4ePOjQl5WVJXd3dw0cONDedvr0aU2aNEm33nqrvLy8VL16dTVv3lxPPfWUjh49WuxzgfKvgrMnAFypFStWqG/fvnJ3d9egQYN06623KicnRxs2bNC4ceO0c+dOvfXWW5KkM2fOKDIyUgkJCerZs6eGDBkiFxcXrVy5Uk899ZSWLVumFStWyMvL64rntWPHDi1btkx9+vS5aM2//vUvDR8+3P5469atmj17tv75z3+qUaNG9vamTZsWe6xnnnlG06dPV7NmzTR+/HhVq1ZN3333nV5//XUtWbJE8fHxatCggcM+7u7uevvttwuN1axZs0uuzcPDQ2vXrlVqaqoCAwMd+mJjY+Xh4aGsrKxC+7322mt66qmndPPNN2v06NEKCgrS7t279fbbb+v999/XF198obZt28rf31933XWXPv30U509e1aVKlUqNNayZcuUlZVVbGgqMHfuXHl7exdqr1KliiTp5MmTuv3225WZmamhQ4eqYcOG+v333/XDDz9o7ty5GjlyZJH7FyU2NlZ16tTRli1btG/fPoWGhl60dtq0aRo5cmSR6ytuHdnZ2fr111+1atUqDR06VLNmzdLy5csVHBx80X3fe+89h8fvvvuuVq9eXai9ffv2GjdunOLi4i4aeuPi4lS9enX16NHjosdbunSp+vXrZw8MVatW1cGDB7V+/XrNnz/fIWiURklfS5J05513SvozoN122232MXbu3Kn09HRVqFBBiYmJqlu3rr1v69atysnJse+bm5urDh06aM+ePRo8eLBGjx6t06dPa+fOnYqLi9MDDzygGjVqXNGa4GQGuI4dOHDAeHt7m4YNG5qjR48W6t+7d6+ZNWuW/fFjjz1mJJnXXnutUO3rr79uJJnHH3/coV2SiY6OLvL4S5cuNZLM2rVr7W2DBw82np6epn79+qZp06YmPz//isa7lLi4OCPJ9OvXz5w/f96hb/PmzaZSpUqmSZMmJjc312GOXl5eJT7GhUJCQkzXrl2Nj4+Pw3NrjDFHjhwxLi4upk+fPkaS2bp1q71vw4YNxsXFxbRv396cOXPGYb99+/aZgIAAExQUZE6ePGmMMea9994zkszixYuLnMfdd99tfH19TVZWljHGmIULFxY65qRJk4wkc+LEiWLXNHXqVCPJJCYmFurLyMgw586dK3b/AgcOHDCSzLJly4yfn5+ZPHlykXWSTPPmzY0kM336dIe+y13H//73P+Pi4mJat25dojkWiI6ONhf7EdC1a1eH5/ZCv/zyi3FxcSn0dfJXYWFhpnHjxiY7O7tQX1pamsPj4r4mino+Lve1lJ2dbTw8PMxDDz3kUDtv3jxTvXp1ExERYf72t7859L388stGktm+fbsxxpgPPvjASDKxsbGF5nju3DmTkZFxsacC1wneMsN1berUqTp9+rTeeecdBQUF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8qRDTVFjXHiMC7m7u8vHx8dhAwAANy6nBqJ27dopJSXFoe2nn35SSEiIJKlu3boKDAxUfHy8vT8zM1ObN29WeHi4JCk8PFzp6elKTk6216xZs0b5+flq3bq1vWb9+vXKzc2116xevVoNGjRw+EQbAACwJqcGoqefflqbNm3Syy+/rH379ikuLk5vvfWWoqOjJUk2m01jxozRSy+9pM8++0w7duzQoEGDVKNGDd1///2S/jyj1L17d40YMUJbtmxRYmKiRo0apf79+6tGjRqSpIEDB8rNzU3Dhg3Tzp079f777+vVV1/V2LFjnbV0AABQjjj1b5m1atVKH3/8sSZMmKAXXnhBdevW1axZsxQVFWWvefbZZ3XmzBk99thjSk9P15133qmVK1fKw8PDXhMbG6tRo0apa9eucnFxUZ8+fTR79mx7v6+vr7766itFR0erZcuWuummmzRx4kSHexUBAADrcup9iK4X3IcIcC7uQwSgNK6b+xABAACUBwQiAABgeQQiAABgeQQiAABgeQQiAABgeQQiAABgeQQiAABgeQQiAABgeQQiAABgeQQiAABgeQQiAABgeQQiAABgeQQiAABgeQQiAABgeQQiAABgeQQiAABgeQQiAABgeQQiAABgeQQiAABgeQQiAABgeQQiAABgeQQiAABgeQQiAABgeQQiAABgeQQiAABgeQQiAABgeQQiAABgeQQiAABgeQQiAABgeQQiAABgeQQiAABgeQQiAABgeQQiAABgeQQiAABgeQQiAABgeQQiAABgeQQiAABgeQQiAABgeQQiAABgeQQiAABgeQQiAABgeQQiAABgeQQiAABgeQQiAABgeQQiAABgeQQiAABgeU4NRJMnT5bNZnPYGjZsaO/PyspSdHS0qlevLm9vb/Xp00dpaWkOYxw+fFiRkZGqVKmS/P39NW7cOJ0/f96hZt26dWrRooXc3d0VGhqqmJiYa7E8AABwnXD6GaLGjRvr2LFj9m3Dhg32vqefflqff/65li5dqoSEBB09elS9e/e29+fl5SkyMlI5OTnauHGjFi1apJiYGE2cONFec/DgQUVGRqpz587atm2bxowZo+HDh2vVqlXXdJ0AAKD8quD0CVSooMDAwELtGRkZeueddxQXF6cuXbpIkhYuXKhGjRpp06ZNatOmjb766ivt2rVLX3/9tQICAtS8eXO9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nQAAwI2nVGeIUlNTFRQUVKjdz89Px44dK/E4EyZMUI8ePVS7dm398ccfiouL07p167Rq1Sr5+vpq2LBhGjt2rKpVqyYfHx+NHj1a4eHhatOmjSTp7rvvVlhYmB555BFNnTpVqampeu655xQdHW0/w/P444/r9ddf17PPPquhQ4dqzZo1+uCDD7RixYrSLB0AANyAShWIgoODlZiYqLp16zq0JyYmqkaNGiUe5/jx4xo0aJCOHTsmX19fNW3aVKtWrdJdd90lSZo5c6ZcXFzUp08fZWdnKyIiQm+88YZ9f1dXVy1fvlwjR45UeHi4vLy8NHjwYL3wwgv2mrp162rFihV6+umn9eqrr6pWrVp6++23FRERUZqlAwCAG1CpAtGIESM0ZswY5ebmqkuXLpKk+Ph4Pfvss5d1p+p33nmn2H4PDw/NmTNHc+bMuWhNSEiIvvjii2LH6dSpk77//vsSzwsAAFhLqQLRuHHj9Pvvv+uJJ55QTk6OpD/Dy/jx4zVhwoQynSAAAMDVVqpAZLPZ9N///lf/93//p927d8vT01O33HILn8wCAADXpVIFogLe3t5q1apVWc0FAADAKUr1sXsAAIAbCYEIAABYHoEIAABYHoEIAABYHoEIAABYHoEIAABYHoEIAABYHoEIAABYHoEIAABY3hXdqRoAUDKHX2ji7CkA5VLtiTucPQVJnCECAAAgEAEAABCIAACA5RGIAACA5RGIAACA5RGIAACA5RGIAACA5RGIAACA5RGIAACA5RGIAACA5RGIAACA5RGIAACA5RGIAACA5RGIAACA5RGIAACA5RGIAACA5RGIAACA5RGIAACA5RGIAACA5RGIAACA5RGIAACA5RGIAACA5RGIAACA5RGIAACA5RGIAACA5RGIAACA5RGIAACA5RGIAACA5RGIAACA5RGIAACA5RGIAACA5RGIAACA5RGIAACA5RGIAACA5Tk1EE2ZMkWtWrVS5cqV5e/vr/vvv18pKSkONVlZWYqOjlb16tXl7e2tPn36KC0tzaHm8OHDioyMVKVKleTv769x48bp/PnzDjXr1q1TixYt5O7urtDQUMXExFzt5QEAgOuEUwNRQkKCoqOjtWnTJq1evVq5ubm6++67debMGXvN008/rc8//1xLly5VQkKCjh49qt69e9v78/LyFBkZqZycHG3cuFGLFi1STEyM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V1/V2LFjnbRqAABQ3jj1Y/fffvutOnfubH9cEFIGDx6smJgYPfvsszpz5owee+wxpaen684779TKlSvl4eFh3yc2NlajRo1S165d5eLioj59+mj27Nn2fl9fX3311VeKjo5Wy5YtddNNN2nixIl85B4AANjZjDHG2ZMo7zIzM+Xr66uMjIyrej1Ry3HvXrWxgetZ8rRBzp7CFTv8QhNnTwEol2pP3HHVxr6cn9/l9hoiAACAa4VABAAALI9ABAAALI9ABAAALI9ABAAALI9ABAAALI9ABAAALI9ABAAALI9ABAAALI9ABAAALI9ABAAALI9ABAAALI9ABAAALI9ABAAALI9ABAAALI9ABAAALI9ABAAALI9ABAAALI9ABAAALI9ABAAALI9ABAAALI9ABAAALI9ABAAALI9ABAAALI9ABAAALI9ABAAALI9ABAAALI9ABAAALI9ABAAALI9ABAAALI9ABAAALI9ABAAALI9ABAAALI9ABAAALI9ABAAALI9ABAAALI9ABAAALI9ABAAALI9ABAAALI9ABAAALI9ABAAALI9ABAAALI9ABAAALI9ABAAALI9ABAAALI9ABAAALM9SgWjOnDmqU6eOPDw81Lp1a23ZssXZUwIAAOWAZQLR+++/r7Fjx2rSpEn67rvv1KxZM0VEROj48ePOnhoAAHAyywSiGTNmaMSIEXr00UcVFhamefPmqVKlSlqwYIGzpwYAAJzMEoEoJydHycnJ6tatm73NxcVF3bp1U1JSkhNnBgAAyoMKzp7AtfDbb78pLy9PAQEBDu0BAQHas2dPofrs7GxlZ2fbH2dkZEiSMjMzr+o887LPXdXxgevV1f7auxb+yMpz9hSAculqfn0XjG2MuWStJQLR5ZoyZYqef/75Qu3BwcFOmA0A39ced/YUAFwtU3yv+iH++OMP+foWfxxLBKKbbrpJrq6uSktLc2hPS0tTYGBgofoJEyZo7Nix9sf5+fk6efKkqlevLpvNdtXnC+fKzMxUcHCwjhw5Ih8fH2dPB0AZ4uvbWowx+uOPP1SjRo1L1loiELm5ually5aKj4/X/fffL+nPkBMfH69Ro0YVqnd3d5e7u7tDW5UqVa7BTFGe+Pj48A0TuEHx9W0dlzozVMASgUiSxo4dq8GDB+v222/XHXfcoVmzZunMmTN69NFHnT01AADgZJYJRP369dOJEyc0ceJEpaamqnnz5lq5cmWhC60BAID1WCYQSdKoUaOKfIsMuJC7u7smTZpU6G1TANc/vr5xMTZTks+iAQAA3MAscWNGAACA4hCIAACA5RGIAACA5RGIgFKy2Wz65JNPnD0NAFdgyJAh9vvTwdoIRLhhDBkyRDabTY8/XvjPPERHR8tms2nIkCFldrxjx46pR48eZTYeYEU2m63Y7d5775XNZtOmTZuK3L9r167q3bv3RcefP3++mjVrJm9vb1WpUkW33XabpkyZcrWWg+sYgQg3lODgYC1ZskTnzv3/fyg3KytLcXFxql27dpkeKzAwkI/uAlfo2LFj9m3WrFny8fFxaFu8eLGaNWumBQsWFNr30KFDWrt2rYYNG1bk2AsWLNCYMWP05JNPatu2bUpMTNSzzz6r06dPX+1l4TpEIMINpUWLFgoODtayZcvsbcuWLVPt2rV122232duys7P15JNPyt/fXx4eHrrzzju1detWSX/+WZdatWpp7ty5DmN///33cnFx0c8//yyp8FtmR44c0UMPPaQqVaqoWrVq6tWrlw4dOnT1FgvcAAIDA+2br6+vbDabQ5u3t7eGDRum999/X2fPnnXYNyYmRkFBQerevXuRY3/22Wd66KGHNGzYMIWGhqpx48YaMGCA/v3vfxeqfeWVVxQUFKTq1asrOjpaubm59r5Tp05p0KBBqlq1qipVqqQePXpo7969kv78W1l+fn768MMP7fXNmzdXUFCQ/fGGDRvk7u5eaP4oXwhEuOEMHTpUCxcutD9esGBBoT/R8uyzz+qjjz7SokWL9N133yk0NFQRERE6efKkXFxcNGDAAMXFxTnsExsbq3bt2ikkJKTQMXNzcxUREaHKlSvrm2++UWJiory9vdW9e3fl5ORcnYUCFhEVFaXs7GyH0GGM0aJFizRkyBC5uroWuV9gYKA2bdpk/yXmYtauXav9+/dr7dq1WrRokWJiYhQTE2PvHzJkiL799lt99tlnSkpKkjFG99xzj3Jzc2Wz2dShQwetW7dO0p/haffu3Tp37pz27NkjSUpISFCrVq1UqVKlK3sicHUZ4AYxePBg06tXL3P8+HHj7u5uDh06ZA4dOmQ8PDzMiRMnTK9evczgwYPN6dOnTcWKFU1sbKx935ycHFOjRg0zdepUY4wx33//vbHZbObnn382xhiTl5dnatasaebOnWvfR5L5+OOPjTHGvPfee6ZBgwYmPz/f3p+dnW08PT3NqlWrrsHqgevfwoULja+vb5F9/fv3Nx07drQ/jo+PN5LM3r17Lzre0aNHTZs2bYwkU79+fTN48GDz/vvvm7y8PHvN4MGDTUhIiDl//ry9rW/fvqZfv37GGGN++uknI8kkJiba+3/77Tfj6elpPvjgA2OMMbNnzzaNGzc2xhjzySefmNatW5tevXrZv19069bN/POf/7y8JwPXHGeIcMPx8/NTZGSkYmJitHDhQkVGRuqmm26y9+/fv1+5ublq166dva1ixYq64447tHv3bkl/nvJu1KiR/SxRQkKCjh8/rr59+xZ5zO3bt2vfvn2qXLmyvL295e3trWrVqikrK0v79++/iqsFrGHo0KFav369/etpwYIF6tixo0JDQy+6T1BQkJKSkrRjxw499dRTOn/+vAYPHqzu3bsrPz/fXte4cWOHs0xBQUE6fvy4JGn37t2qUKGCWrdube+vXr26GjRoYP9+0bFjR+3atUsnTpxQQkKCOnXqpE6dOmndunXKzc3Vxo0b1alTp7J8OnAVEIhwQxo6dKhiYmK0aNEiDR06tFRjREVF2QNRXFycunfvrurVqxdZe/r0abVs2VLbtm1z2H766ScNHDiw1OsA8KeuXbuqdu3aiomJUWZmppYtW3bRi6n/6tZbb9UTTzyh//3vf1q9erVWr16thIQEe3/FihUd6m02m0NgupQmTZqoWrVqSkhIcAhECQkJ2rp1q3Jzc9W2bdsSjwfnIBDhhlRw7U7BtT0Xqlevntzc3JSYmGhvy83N1datWxUWFmZvGzhwoH788UclJyfrww8/VFRU1EWP16JFC+3du1f+/v4KDQ112Hx9fct+gYDFuLi46NFHH9WiRYsUFxcnNzc3Pfjgg5c9TsHX+JkzZ0pU36hRI50/f16bN2+2t/3+++9KSUmxj2Wz2dS+fXt9+umn2rlzp+688041bdpU2dnZevPNN3X77bfLy8vrsueKa4tAhBuSq6urdu/erV27dhW64NLLy0sjR47UuHHjtHLlSu3atUsjRozQ2bNnHX7jrFOnjtq2bathw4YpLy9P991330WPFxUVpZtuukm9evXSN998o4MHD2rdunV68skn9csvv1y1dQJW8uijj+rXX3/VP//5Tw0YMECenp7F1o8cOVIvvvii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",
+      "text/plain": [
+       "<Figure size 640x480 with 1 Axes>"
+      ]
+     },
+     "metadata": {},
+     "output_type": "display_data"
+    }
+   ],
+   "source": [
+    "sns.countplot(data=df ,x='type')\n",
+    "plt.title(\"COUNT OF MOVIES AND TV SHOWS\")\n",
+    "plt.xlabel(\"Category\")\n",
+    "plt.show()"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 23,
+   "id": "9cfe7c90",
+   "metadata": {
+    "execution": {
+     "iopub.execute_input": "2024-10-13T14:08:07.731803Z",
+     "iopub.status.busy": "2024-10-13T14:08:07.730852Z",
+     "iopub.status.idle": "2024-10-13T14:08:07.852810Z",
+     "shell.execute_reply": "2024-10-13T14:08:07.851704Z"
+    },
+    "papermill": {
+     "duration": 0.144491,
+     "end_time": "2024-10-13T14:08:07.855321",
+     "exception": false,
+     "start_time": "2024-10-13T14:08:07.710830",
+     "status": "completed"
+    },
+    "tags": []
+   },
+   "outputs": [
+    {
+     "data": {
+      "text/html": [
+       "<div>                            <div id=\"cfdd5748-f0f2-4e53-9504-bb61a93168d2\" class=\"plotly-graph-div\" style=\"height:525px; width:100%;\"></div>            <script type=\"text/javascript\">                require([\"plotly\"], function(Plotly) {                    window.PLOTLYENV=window.PLOTLYENV || {};                                    if (document.getElementById(\"cfdd5748-f0f2-4e53-9504-bb61a93168d2\")) {                    Plotly.newPlot(                        \"cfdd5748-f0f2-4e53-9504-bb61a93168d2\",                        [{\"hovertemplate\":\"release_year=%{x}\\u003cbr\\u003etotal count=%{y}\\u003cextra\\u003e\\u003c\\u002fextra\\u003e\",\"legendgroup\":\"\",\"line\":{\"color\":\"#636efa\",\"dash\":\"solid\"},\"marker\":{\"symbol\":\"circle\"},\"mode\":\"lines\",\"name\":\"\",\"orientation\":\"v\",\"showlegend\":false,\"x\":[1942,1943,1944,1945,1946,1947,1954,1955,1956,1958,1959,1960,1961,1962,1963,1964,1965,1966,1967,1968,1969,1970,1971,1972,1973,1974,1975,1976,1977,1978,1979,1980,1981,1982,1983,1984,1985,1986,1987,1988,1989,1990,1991,1992,1993,1994,1995,1996,1997,1998,1999,2000,2001,2002,2003,2004,2005,2006,2007,2008,2009,2010,2011,2012,2013,2014,2015,2016,2017,2018,2019,2020,2021],\"xaxis\":\"x\",\"y\":[2,3,3,3,1,1,2,3,2,3,1,4,1,3,1,2,2,1,4,3,2,2,5,4,10,6,7,9,6,7,10,11,12,17,11,12,9,11,8,16,15,19,16,20,24,20,23,21,34,32,32,33,40,44,51,55,67,82,74,113,118,154,145,173,225,264,398,658,767,767,633,517,277],\"yaxis\":\"y\",\"type\":\"scatter\"}],                        {\"template\":{\"data\":{\"histogram2dcontour\":[{\"type\":\"histogram2dcontour\",\"colorbar\":{\"outlinewidth\":0,\"ticks\":\"\"},\"colorscale\":[[0.0,\"#0d0887\"],[0.1111111111111111,\"#46039f\"],[0.2222222222222222,\"#7201a8\"],[0.3333333333333333,\"#9c179e\"],[0.4444444444444444,\"#bd3786\"],[0.5555555555555556,\"#d8576b\"],[0.6666666666666666,\"#ed7953\"],[0.7777777777777778,\"#fb9f3a\"],[0.8888888888888888,\"#fdca26\"],[1.0,\"#f0f921\"]]}],\"choropleth\":[{\"type\":\"choropleth\",\"colorbar\":{\"outlinewidth\":0,\"ticks\":\"\"}}],\"histogram2d\":[{\"type\":\"histogram2d\",\"colorbar\":{\"outlinewidth\":0,\"ticks\":\"\"},\"colorscale\":[[0.0,\"#0d0887\"],[0.1111111111111111,\"#46039f\"],[0.2222222222222222,\"#7201a8\"],[0.3333333333333333,\"#9c179e\"],[0.4444444444444444,\"#bd3786\"],[0.5555555555555556,\"#d8576b\"],[0.6666666666666666,\"#ed7953\"],[0.7777777777777778,\"#fb9f3a\"],[0.8888888888888888,\"#fdca26\"],[1.0,\"#f0f921\"]]}],\"heatmap\":[{\"type\":\"heatmap\",\"colorbar\":{\"outlinewidth\":0,\"ticks\":\"\"},\"colorscale\":[[0.0,\"#0d0887\"],[0.1111111111111111,\"#46039f\"],[0.2222222222222222,\"#7201a8\"],[0.3333333333333333,\"#9c179e\"],[0.4444444444444444,\"#bd3786\"],[0.5555555555555556,\"#d8576b\"],[0.6666666666666666,\"#ed7953\"],[0.7777777777777778,\"#fb9f3a\"],[0.8888888888888888,\"#fdca26\"],[1.0,\"#f0f921\"]]}],\"heatmapgl\":[{\"type\":\"heatmapgl\",\"colorbar\":{\"outlinewidth\":0,\"ticks\":\"\"},\"colorscale\":[[0.0,\"#0d0887\"],[0.1111111111111111,\"#46039f\"],[0.2222222222222222,\"#7201a8\"],[0.3333333333333333,\"#9c179e\"],[0.4444444444444444,\"#bd3786\"],[0.5555555555555556,\"#d8576b\"],[0.6666666666666666,\"#ed7953\"],[0.7777777777777778,\"#fb9f3a\"],[0.8888888888888888,\"#fdca26\"],[1.0,\"#f0f921\"]]}],\"contourcarpet\":[{\"type\":\"contourcarpet\",\"colorbar\":{\"outlinewidth\":0,\"ticks\":\"\"}}],\"contour\":[{\"type\":\"contour\",\"colorbar\":{\"outlinewidth\":0,\"ticks\":\"\"},\"colorscale\":[[0.0,\"#0d0887\"],[0.1111111111111111,\"#46039f\"],[0.2222222222222222,\"#7201a8\"],[0.3333333333333333,\"#9c179e\"],[0.4444444444444444,\"#bd3786\"],[0.5555555555555556,\"#d8576b\"],[0.6666666666666666,\"#ed7953\"],[0.7777777777777778,\"#fb9f3a\"],[0.8888888888888888,\"#fdca26\"],[1.0,\"#f0f921\"]]}],\"surface\":[{\"type\":\"surface\",\"colorbar\":{\"outlinewidth\":0,\"ticks\":\"\"},\"colorscale\":[[0.0,\"#0d0887\"],[0.1111111111111111,\"#46039f\"],[0.2222222222222222,\"#7201a8\"],[0.3333333333333333,\"#9c179e\"],[0.4444444444444444,\"#bd3786\"],[0.5555555555555556,\"#d8576b\"],[0.6666666666666666,\"#ed7953\"],[0.7777777777777778,\"#fb9f3a\"],[0.8888888888888888,\"#fdca26\"],[1.0,\"#f0f921\"]]}],\"mesh3d\":[{\"type\":\"mesh3d\",\"colorbar\":{\"outlinewidth\":0,\"ticks\":\"\"}}],\"scatter\":[{\"fillpattern\":{\"fillmode\":\"overlay\",\"size\":10,\"solidity\":0.2},\"type\":\"scatter\"}],\"parcoords\":[{\"type\":\"parcoords\",\"line\":{\"colorbar\":{\"outlinewidth\":0,\"ticks\":\"\"}}}],\"scatterpolargl\":[{\"type\":\"scatterpolargl\",\"marker\":{\"colorbar\":{\"outlinewidth\":0,\"ticks\":\"\"}}}],\"bar\":[{\"error_x\":{\"color\":\"#2a3f5f\"},\"error_y\":{\"color\":\"#2a3f5f\"},\"marker\":{\"line\":{\"color\":\"#E5ECF6\",\"width\":0.5},\"pattern\":{\"fillmode\":\"overlay\",\"size\":10,\"solidity\":0.2}},\"type\":\"bar\"}],\"scattergeo\":[{\"type\":\"scattergeo\",\"marker\":{\"colorbar\":{\"outlinewidth\":0,\"ticks\":\"\"}}}],\"scatterpolar\":[{\"type\":\"scatterpolar\",\"marker\":{\"colorbar\":{\"outlinewidth\":0,\"ticks\":\"\"}}}],\"histogram\":[{\"marker\":{\"pattern\":{\"fillmode\":\"overlay\",\"size\":10,\"solidity\":0.2}},\"type\":\"histogram\"}],\"scattergl\":[{\"type\":\"scattergl\",\"marker\":{\"colorbar\":{\"outlinewidth\":0,\"ticks\":\"\"}}}],\"scatter3d\":[{\"type\":\"scatter3d\",\"line\":{\"colorbar\":{\"outlinewidth\":0,\"ticks\":\"\"}},\"marker\":{\"colorbar\":{\"outlinewidth\":0,\"ticks\":\"\"}}}],\"scattermapbox\":[{\"type\":\"scattermapbox\",\"marker\":{\"colorbar\":{\"outlinewidth\":0,\"ticks\":\"\"}}}],\"scatterternary\":[{\"type\":\"scatterternary\",\"marker\":{\"colorbar\":{\"outlinewidth\":0,\"ticks\":\"\"}}}],\"scattercarpet\":[{\"type\":\"scattercarpet\",\"marker\":{\"colorbar\":{\"outlinewidth\":0,\"ticks\":\"\"}}}],\"carpet\":[{\"aaxis\":{\"endlinecolor\":\"#2a3f5f\",\"gridcolor\":\"white\",\"linecolor\":\"white\",\"minorgridcolor\":\"white\",\"startlinecolor\":\"#2a3f5f\"},\"baxis\":{\"endlinecolor\":\"#2a3f5f\",\"gridcolor\":\"white\",\"linecolor\":\"white\",\"minorgridcolor\":\"white\",\"startlinecolor\":\"#2a3f5f\"},\"type\":\"carpet\"}],\"table\":[{\"cells\":{\"fill\":{\"color\":\"#EBF0F8\"},\"line\":{\"color\":\"white\"}},\"header\":{\"fill\":{\"color\":\"#C8D4E3\"},\"line\":{\"color\":\"white\"}},\"type\":\"table\"}],\"barpolar\":[{\"marker\":{\"line\":{\"color\":\"#E5ECF6\",\"width\":0.5},\"pattern\":{\"fillmode\":\"overlay\",\"size\":10,\"solidity\":0.2}},\"type\":\"barpolar\"}],\"pie\":[{\"automargin\":true,\"type\":\"pie\"}]},\"layout\":{\"autotypenumbers\":\"strict\",\"colorway\":[\"#636efa\",\"#EF553B\",\"#00cc96\",\"#ab63fa\",\"#FFA15A\",\"#19d3f3\",\"#FF6692\",\"#B6E880\",\"#FF97FF\",\"#FECB52\"],\"font\":{\"color\":\"#2a3f5f\"},\"hovermode\":\"closest\",\"hoverlabel\":{\"align\":\"left\"},\"paper_bgcolor\":\"white\",\"plot_bgcolor\":\"#E5ECF6\",\"polar\":{\"bgcolor\":\"#E5ECF6\",\"angularaxis\":{\"gridcolor\":\"white\",\"linecolor\":\"white\",\"ticks\":\"\"},\"radialaxis\":{\"gridcolor\":\"white\",\"linecolor\":\"white\",\"ticks\":\"\"}},\"ternary\":{\"bgcolor\":\"#E5ECF6\",\"aaxis\":{\"gridcolor\":\"white\",\"linecolor\":\"white\",\"ticks\":\"\"},\"baxis\":{\"gridcolor\":\"white\",\"linecolor\":\"white\",\"ticks\":\"\"},\"caxis\":{\"gridcolor\":\"white\",\"linecolor\":\"white\",\"ticks\":\"\"}},\"coloraxis\":{\"colorbar\":{\"outlinewidth\":0,\"ticks\":\"\"}},\"colorscale\":{\"sequential\":[[0.0,\"#0d0887\"],[0.1111111111111111,\"#46039f\"],[0.2222222222222222,\"#7201a8\"],[0.3333333333333333,\"#9c179e\"],[0.4444444444444444,\"#bd3786\"],[0.5555555555555556,\"#d8576b\"],[0.6666666666666666,\"#ed7953\"],[0.7777777777777778,\"#fb9f3a\"],[0.8888888888888888,\"#fdca26\"],[1.0,\"#f0f921\"]],\"sequentialminus\":[[0.0,\"#0d0887\"],[0.1111111111111111,\"#46039f\"],[0.2222222222222222,\"#7201a8\"],[0.3333333333333333,\"#9c179e\"],[0.4444444444444444,\"#bd3786\"],[0.5555555555555556,\"#d8576b\"],[0.6666666666666666,\"#ed7953\"],[0.7777777777777778,\"#fb9f3a\"],[0.8888888888888888,\"#fdca26\"],[1.0,\"#f0f921\"]],\"diverging\":[[0,\"#8e0152\"],[0.1,\"#c51b7d\"],[0.2,\"#de77ae\"],[0.3,\"#f1b6da\"],[0.4,\"#fde0ef\"],[0.5,\"#f7f7f7\"],[0.6,\"#e6f5d0\"],[0.7,\"#b8e186\"],[0.8,\"#7fbc41\"],[0.9,\"#4d9221\"],[1,\"#276419\"]]},\"xaxis\":{\"gridcolor\":\"white\",\"linecolor\":\"white\",\"ticks\":\"\",\"title\":{\"standoff\":15},\"zerolinecolor\":\"white\",\"automargin\":true,\"zerolinewidth\":2},\"yaxis\":{\"gridcolor\":\"white\",\"linecolor\":\"white\",\"ticks\":\"\",\"title\":{\"standoff\":15},\"zerolinecolor\":\"white\",\"automargin\":true,\"zerolinewidth\":2},\"scene\":{\"xaxis\":{\"backgroundcolor\":\"#E5ECF6\",\"gridcolor\":\"white\",\"linecolor\":\"white\",\"showbackground\":true,\"ticks\":\"\",\"zerolinecolor\":\"white\",\"gridwidth\":2},\"yaxis\":{\"backgroundcolor\":\"#E5ECF6\",\"gridcolor\":\"white\",\"linecolor\":\"white\",\"showbackground\":true,\"ticks\":\"\",\"zerolinecolor\":\"white\",\"gridwidth\":2},\"zaxis\":{\"backgroundcolor\":\"#E5ECF6\",\"gridcolor\":\"white\",\"linecolor\":\"white\",\"showbackground\":true,\"ticks\":\"\",\"zerolinecolor\":\"white\",\"gridwidth\":2}},\"shapedefaults\":{\"line\":{\"color\":\"#2a3f5f\"}},\"annotationdefaults\":{\"arrowcolor\":\"#2a3f5f\",\"arrowhead\":0,\"arrowwidth\":1},\"geo\":{\"bgcolor\":\"white\",\"landcolor\":\"#E5ECF6\",\"subunitcolor\":\"white\",\"showland\":true,\"showlakes\":true,\"lakecolor\":\"white\"},\"title\":{\"x\":0.05},\"mapbox\":{\"style\":\"light\"}}},\"xaxis\":{\"anchor\":\"y\",\"domain\":[0.0,1.0],\"title\":{\"text\":\"release_year\"}},\"yaxis\":{\"anchor\":\"x\",\"domain\":[0.0,1.0],\"title\":{\"text\":\"total count\"}},\"legend\":{\"tracegroupgap\":0},\"title\":{\"text\":\"Number of Movies Released\"}},                        {\"responsive\": true}                    ).then(function(){\n",
+       "                            \n",
+       "var gd = document.getElementById('cfdd5748-f0f2-4e53-9504-bb61a93168d2');\n",
+       "var x = new MutationObserver(function (mutations, observer) {{\n",
+       "        var display = window.getComputedStyle(gd).display;\n",
+       "        if (!display || display === 'none') {{\n",
+       "            console.log([gd, 'removed!']);\n",
+       "            Plotly.purge(gd);\n",
+       "            observer.disconnect();\n",
+       "        }}\n",
+       "}});\n",
+       "\n",
+       "// Listen for the removal of the full notebook cells\n",
+       "var notebookContainer = gd.closest('#notebook-container');\n",
+       "if (notebookContainer) {{\n",
+       "    x.observe(notebookContainer, {childList: true});\n",
+       "}}\n",
+       "\n",
+       "// Listen for the clearing of the current output cell\n",
+       "var outputEl = gd.closest('.output');\n",
+       "if (outputEl) {{\n",
+       "    x.observe(outputEl, {childList: true});\n",
+       "}}\n",
+       "\n",
+       "                        })                };                });            </script>        </div>"
+      ]
+     },
+     "metadata": {},
+     "output_type": "display_data"
+    }
+   ],
+   "source": [
+    "Movies = df[df['type']=='Movie']\n",
+    "df_movie = Movies.groupby('release_year')[\"type\"].count()\n",
+    "df_movie = df_movie.to_frame().reset_index()\n",
+    "df_movie = df_movie.rename(columns ={\"type\":\"total count\"})\n",
+    "movies_char  = px.line(df_movie,x= 'release_year',y='total count',title='Number of Movies Released')\n",
+    "movies_char "
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 24,
+   "id": "7caf038c",
+   "metadata": {
+    "execution": {
+     "iopub.execute_input": "2024-10-13T14:08:07.888420Z",
+     "iopub.status.busy": "2024-10-13T14:08:07.888007Z",
+     "iopub.status.idle": "2024-10-13T14:08:07.962148Z",
+     "shell.execute_reply": "2024-10-13T14:08:07.961061Z"
+    },
+    "papermill": {
+     "duration": 0.094195,
+     "end_time": "2024-10-13T14:08:07.964576",
+     "exception": false,
+     "start_time": "2024-10-13T14:08:07.870381",
+     "status": "completed"
+    },
+    "tags": []
+   },
+   "outputs": [
+    {
+     "data": {
+      "text/html": [
+       "<div>                            <div id=\"4f10a5fb-442d-47b0-bf4b-628a1e701d9c\" class=\"plotly-graph-div\" style=\"height:525px; width:100%;\"></div>            <script type=\"text/javascript\">                require([\"plotly\"], function(Plotly) {                    window.PLOTLYENV=window.PLOTLYENV || {};                                    if (document.getElementById(\"4f10a5fb-442d-47b0-bf4b-628a1e701d9c\")) {                    Plotly.newPlot(                        \"4f10a5fb-442d-47b0-bf4b-628a1e701d9c\",                        [{\"hovertemplate\":\"release_year=%{x}\\u003cbr\\u003etotal count=%{y}\\u003cextra\\u003e\\u003c\\u002fextra\\u003e\",\"legendgroup\":\"\",\"line\":{\"color\":\"#636efa\",\"dash\":\"solid\"},\"marker\":{\"symbol\":\"circle\"},\"mode\":\"lines\",\"name\":\"\",\"orientation\":\"v\",\"showlegend\":false,\"x\":[1925,1945,1946,1963,1967,1972,1974,1977,1979,1981,1985,1986,1988,1989,1990,1991,1992,1993,1994,1995,1996,1997,1998,1999,2000,2001,2002,2003,2004,2005,2006,2007,2008,2009,2010,2011,2012,2013,2014,2015,2016,2017,2018,2019,2020,2021],\"xaxis\":\"x\",\"y\":[1,1,1,1,1,1,1,1,1,1,1,2,2,1,3,1,3,4,2,2,3,4,4,7,4,5,7,10,9,13,14,14,23,34,40,40,64,63,88,162,244,265,380,397,436,315],\"yaxis\":\"y\",\"type\":\"scatter\"}],                        {\"template\":{\"data\":{\"histogram2dcontour\":[{\"type\":\"histogram2dcontour\",\"colorbar\":{\"outlinewidth\":0,\"ticks\":\"\"},\"colorscale\":[[0.0,\"#0d0887\"],[0.1111111111111111,\"#46039f\"],[0.2222222222222222,\"#7201a8\"],[0.3333333333333333,\"#9c179e\"],[0.4444444444444444,\"#bd3786\"],[0.5555555555555556,\"#d8576b\"],[0.6666666666666666,\"#ed7953\"],[0.7777777777777778,\"#fb9f3a\"],[0.8888888888888888,\"#fdca26\"],[1.0,\"#f0f921\"]]}],\"choropleth\":[{\"type\":\"choropleth\",\"colorbar\":{\"outlinewidth\":0,\"ticks\":\"\"}}],\"histogram2d\":[{\"type\":\"histogram2d\",\"colorbar\":{\"outlinewidth\":0,\"ticks\":\"\"},\"colorscale\":[[0.0,\"#0d0887\"],[0.1111111111111111,\"#46039f\"],[0.2222222222222222,\"#7201a8\"],[0.3333333333333333,\"#9c179e\"],[0.4444444444444444,\"#bd3786\"],[0.5555555555555556,\"#d8576b\"],[0.6666666666666666,\"#ed7953\"],[0.7777777777777778,\"#fb9f3a\"],[0.8888888888888888,\"#fdca26\"],[1.0,\"#f0f921\"]]}],\"heatmap\":[{\"type\":\"heatmap\",\"colorbar\":{\"outlinewidth\":0,\"ticks\":\"\"},\"colorscale\":[[0.0,\"#0d0887\"],[0.1111111111111111,\"#46039f\"],[0.2222222222222222,\"#7201a8\"],[0.3333333333333333,\"#9c179e\"],[0.4444444444444444,\"#bd3786\"],[0.5555555555555556,\"#d8576b\"],[0.6666666666666666,\"#ed7953\"],[0.7777777777777778,\"#fb9f3a\"],[0.8888888888888888,\"#fdca26\"],[1.0,\"#f0f921\"]]}],\"heatmapgl\":[{\"type\":\"heatmapgl\",\"colorbar\":{\"outlinewidth\":0,\"ticks\":\"\"},\"colorscale\":[[0.0,\"#0d0887\"],[0.1111111111111111,\"#46039f\"],[0.2222222222222222,\"#7201a8\"],[0.3333333333333333,\"#9c179e\"],[0.4444444444444444,\"#bd3786\"],[0.5555555555555556,\"#d8576b\"],[0.6666666666666666,\"#ed7953\"],[0.7777777777777778,\"#fb9f3a\"],[0.8888888888888888,\"#fdca26\"],[1.0,\"#f0f921\"]]}],\"contourcarpet\":[{\"type\":\"contourcarpet\",\"colorbar\":{\"outlinewidth\":0,\"ticks\":\"\"}}],\"contour\":[{\"type\":\"contour\",\"colorbar\":{\"outlinewidth\":0,\"ticks\":\"\"},\"colorscale\":[[0.0,\"#0d0887\"],[0.1111111111111111,\"#46039f\"],[0.2222222222222222,\"#7201a8\"],[0.3333333333333333,\"#9c179e\"],[0.4444444444444444,\"#bd3786\"],[0.5555555555555556,\"#d8576b\"],[0.6666666666666666,\"#ed7953\"],[0.7777777777777778,\"#fb9f3a\"],[0.8888888888888888,\"#fdca26\"],[1.0,\"#f0f921\"]]}],\"surface\":[{\"type\":\"surface\",\"colorbar\":{\"outlinewidth\":0,\"ticks\":\"\"},\"colorscale\":[[0.0,\"#0d0887\"],[0.1111111111111111,\"#46039f\"],[0.2222222222222222,\"#7201a8\"],[0.3333333333333333,\"#9c179e\"],[0.4444444444444444,\"#bd3786\"],[0.5555555555555556,\"#d8576b\"],[0.6666666666666666,\"#ed7953\"],[0.7777777777777778,\"#fb9f3a\"],[0.8888888888888888,\"#fdca26\"],[1.0,\"#f0f921\"]]}],\"mesh3d\":[{\"type\":\"mesh3d\",\"colorbar\":{\"outlinewidth\":0,\"ticks\":\"\"}}],\"scatter\":[{\"fillpattern\":{\"fillmode\":\"overlay\",\"size\":10,\"solidity\":0.2},\"type\":\"scatter\"}],\"parcoords\":[{\"type\":\"parcoords\",\"line\":{\"colorbar\":{\"outlinewidth\":0,\"ticks\":\"\"}}}],\"scatterpolargl\":[{\"type\":\"scatterpolargl\",\"marker\":{\"colorbar\":{\"outlinewidth\":0,\"ticks\":\"\"}}}],\"bar\":[{\"error_x\":{\"color\":\"#2a3f5f\"},\"error_y\":{\"color\":\"#2a3f5f\"},\"marker\":{\"line\":{\"color\":\"#E5ECF6\",\"width\":0.5},\"pattern\":{\"fillmode\":\"overlay\",\"size\":10,\"solidity\":0.2}},\"type\":\"bar\"}],\"scattergeo\":[{\"type\":\"scattergeo\",\"marker\":{\"colorbar\":{\"outlinewidth\":0,\"ticks\":\"\"}}}],\"scatterpolar\":[{\"type\":\"scatterpolar\",\"marker\":{\"colorbar\":{\"outlinewidth\":0,\"ticks\":\"\"}}}],\"histogram\":[{\"marker\":{\"pattern\":{\"fillmode\":\"overlay\",\"size\":10,\"solidity\":0.2}},\"type\":\"histogram\"}],\"scattergl\":[{\"type\":\"scattergl\",\"marker\":{\"colorbar\":{\"outlinewidth\":0,\"ticks\":\"\"}}}],\"scatter3d\":[{\"type\":\"scatter3d\",\"line\":{\"colorbar\":{\"outlinewidth\":0,\"ticks\":\"\"}},\"marker\":{\"colorbar\":{\"outlinewidth\":0,\"ticks\":\"\"}}}],\"scattermapbox\":[{\"type\":\"scattermapbox\",\"marker\":{\"colorbar\":{\"outlinewidth\":0,\"ticks\":\"\"}}}],\"scatterternary\":[{\"type\":\"scatterternary\",\"marker\":{\"colorbar\":{\"outlinewidth\":0,\"ticks\":\"\"}}}],\"scattercarpet\":[{\"type\":\"scattercarpet\",\"marker\":{\"colorbar\":{\"outlinewidth\":0,\"ticks\":\"\"}}}],\"carpet\":[{\"aaxis\":{\"endlinecolor\":\"#2a3f5f\",\"gridcolor\":\"white\",\"linecolor\":\"white\",\"minorgridcolor\":\"white\",\"startlinecolor\":\"#2a3f5f\"},\"baxis\":{\"endlinecolor\":\"#2a3f5f\",\"gridcolor\":\"white\",\"linecolor\":\"white\",\"minorgridcolor\":\"white\",\"startlinecolor\":\"#2a3f5f\"},\"type\":\"carpet\"}],\"table\":[{\"cells\":{\"fill\":{\"color\":\"#EBF0F8\"},\"line\":{\"color\":\"white\"}},\"header\":{\"fill\":{\"color\":\"#C8D4E3\"},\"line\":{\"color\":\"white\"}},\"type\":\"table\"}],\"barpolar\":[{\"marker\":{\"line\":{\"color\":\"#E5ECF6\",\"width\":0.5},\"pattern\":{\"fillmode\":\"overlay\",\"size\":10,\"solidity\":0.2}},\"type\":\"barpolar\"}],\"pie\":[{\"automargin\":true,\"type\":\"pie\"}]},\"layout\":{\"autotypenumbers\":\"strict\",\"colorway\":[\"#636efa\",\"#EF553B\",\"#00cc96\",\"#ab63fa\",\"#FFA15A\",\"#19d3f3\",\"#FF6692\",\"#B6E880\",\"#FF97FF\",\"#FECB52\"],\"font\":{\"color\":\"#2a3f5f\"},\"hovermode\":\"closest\",\"hoverlabel\":{\"align\":\"left\"},\"paper_bgcolor\":\"white\",\"plot_bgcolor\":\"#E5ECF6\",\"polar\":{\"bgcolor\":\"#E5ECF6\",\"angularaxis\":{\"gridcolor\":\"white\",\"linecolor\":\"white\",\"ticks\":\"\"},\"radialaxis\":{\"gridcolor\":\"white\",\"linecolor\":\"white\",\"ticks\":\"\"}},\"ternary\":{\"bgcolor\":\"#E5ECF6\",\"aaxis\":{\"gridcolor\":\"white\",\"linecolor\":\"white\",\"ticks\":\"\"},\"baxis\":{\"gridcolor\":\"white\",\"linecolor\":\"white\",\"ticks\":\"\"},\"caxis\":{\"gridcolor\":\"white\",\"linecolor\":\"white\",\"ticks\":\"\"}},\"coloraxis\":{\"colorbar\":{\"outlinewidth\":0,\"ticks\":\"\"}},\"colorscale\":{\"sequential\":[[0.0,\"#0d0887\"],[0.1111111111111111,\"#46039f\"],[0.2222222222222222,\"#7201a8\"],[0.3333333333333333,\"#9c179e\"],[0.4444444444444444,\"#bd3786\"],[0.5555555555555556,\"#d8576b\"],[0.6666666666666666,\"#ed7953\"],[0.7777777777777778,\"#fb9f3a\"],[0.8888888888888888,\"#fdca26\"],[1.0,\"#f0f921\"]],\"sequentialminus\":[[0.0,\"#0d0887\"],[0.1111111111111111,\"#46039f\"],[0.2222222222222222,\"#7201a8\"],[0.3333333333333333,\"#9c179e\"],[0.4444444444444444,\"#bd3786\"],[0.5555555555555556,\"#d8576b\"],[0.6666666666666666,\"#ed7953\"],[0.7777777777777778,\"#fb9f3a\"],[0.8888888888888888,\"#fdca26\"],[1.0,\"#f0f921\"]],\"diverging\":[[0,\"#8e0152\"],[0.1,\"#c51b7d\"],[0.2,\"#de77ae\"],[0.3,\"#f1b6da\"],[0.4,\"#fde0ef\"],[0.5,\"#f7f7f7\"],[0.6,\"#e6f5d0\"],[0.7,\"#b8e186\"],[0.8,\"#7fbc41\"],[0.9,\"#4d9221\"],[1,\"#276419\"]]},\"xaxis\":{\"gridcolor\":\"white\",\"linecolor\":\"white\",\"ticks\":\"\",\"title\":{\"standoff\":15},\"zerolinecolor\":\"white\",\"automargin\":true,\"zerolinewidth\":2},\"yaxis\":{\"gridcolor\":\"white\",\"linecolor\":\"white\",\"ticks\":\"\",\"title\":{\"standoff\":15},\"zerolinecolor\":\"white\",\"automargin\":true,\"zerolinewidth\":2},\"scene\":{\"xaxis\":{\"backgroundcolor\":\"#E5ECF6\",\"gridcolor\":\"white\",\"linecolor\":\"white\",\"showbackground\":true,\"ticks\":\"\",\"zerolinecolor\":\"white\",\"gridwidth\":2},\"yaxis\":{\"backgroundcolor\":\"#E5ECF6\",\"gridcolor\":\"white\",\"linecolor\":\"white\",\"showbackground\":true,\"ticks\":\"\",\"zerolinecolor\":\"white\",\"gridwidth\":2},\"zaxis\":{\"backgroundcolor\":\"#E5ECF6\",\"gridcolor\":\"white\",\"linecolor\":\"white\",\"showbackground\":true,\"ticks\":\"\",\"zerolinecolor\":\"white\",\"gridwidth\":2}},\"shapedefaults\":{\"line\":{\"color\":\"#2a3f5f\"}},\"annotationdefaults\":{\"arrowcolor\":\"#2a3f5f\",\"arrowhead\":0,\"arrowwidth\":1},\"geo\":{\"bgcolor\":\"white\",\"landcolor\":\"#E5ECF6\",\"subunitcolor\":\"white\",\"showland\":true,\"showlakes\":true,\"lakecolor\":\"white\"},\"title\":{\"x\":0.05},\"mapbox\":{\"style\":\"light\"}}},\"xaxis\":{\"anchor\":\"y\",\"domain\":[0.0,1.0],\"title\":{\"text\":\"release_year\"}},\"yaxis\":{\"anchor\":\"x\",\"domain\":[0.0,1.0],\"title\":{\"text\":\"total count\"}},\"legend\":{\"tracegroupgap\":0},\"title\":{\"text\":\"Number of Tv_Shows Released\"}},                        {\"responsive\": true}                    ).then(function(){\n",
+       "                            \n",
+       "var gd = document.getElementById('4f10a5fb-442d-47b0-bf4b-628a1e701d9c');\n",
+       "var x = new MutationObserver(function (mutations, observer) {{\n",
+       "        var display = window.getComputedStyle(gd).display;\n",
+       "        if (!display || display === 'none') {{\n",
+       "            console.log([gd, 'removed!']);\n",
+       "            Plotly.purge(gd);\n",
+       "            observer.disconnect();\n",
+       "        }}\n",
+       "}});\n",
+       "\n",
+       "// Listen for the removal of the full notebook cells\n",
+       "var notebookContainer = gd.closest('#notebook-container');\n",
+       "if (notebookContainer) {{\n",
+       "    x.observe(notebookContainer, {childList: true});\n",
+       "}}\n",
+       "\n",
+       "// Listen for the clearing of the current output cell\n",
+       "var outputEl = gd.closest('.output');\n",
+       "if (outputEl) {{\n",
+       "    x.observe(outputEl, {childList: true});\n",
+       "}}\n",
+       "\n",
+       "                        })                };                });            </script>        </div>"
+      ]
+     },
+     "metadata": {},
+     "output_type": "display_data"
+    }
+   ],
+   "source": [
+    "Tv_Show = df[df['type']=='TV Show']\n",
+    "df_Tv_Show = Tv_Show.groupby('release_year')[\"type\"].count()\n",
+    "df_Tv_Show = df_Tv_Show.to_frame().reset_index()\n",
+    "df_Tv_Show = df_Tv_Show.rename(columns ={\"type\":\"total count\"})\n",
+    "Tv_char = px.line(df_Tv_Show,x= 'release_year',y='total count',title='Number of Tv_Shows Released')\n",
+    "Tv_char.show() "
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 25,
+   "id": "2e054268",
+   "metadata": {
+    "execution": {
+     "iopub.execute_input": "2024-10-13T14:08:07.997889Z",
+     "iopub.status.busy": "2024-10-13T14:08:07.997007Z",
+     "iopub.status.idle": "2024-10-13T14:08:08.116220Z",
+     "shell.execute_reply": "2024-10-13T14:08:08.115135Z"
+    },
+    "papermill": {
+     "duration": 0.138732,
+     "end_time": "2024-10-13T14:08:08.118571",
+     "exception": false,
+     "start_time": "2024-10-13T14:08:07.979839",
+     "status": "completed"
+    },
+    "tags": []
+   },
+   "outputs": [
+    {
+     "data": {
+      "text/html": [
+       "<div>                            <div id=\"20ddb8b8-7e50-46d7-ba86-82068dec16c6\" class=\"plotly-graph-div\" style=\"height:525px; width:100%;\"></div>            <script type=\"text/javascript\">                require([\"plotly\"], function(Plotly) {                    window.PLOTLYENV=window.PLOTLYENV || {};                                    if (document.getElementById(\"20ddb8b8-7e50-46d7-ba86-82068dec16c6\")) {                    Plotly.newPlot(                        \"20ddb8b8-7e50-46d7-ba86-82068dec16c6\",                        [{\"alignmentgroup\":\"True\",\"hovertemplate\":\"country=%{x}\\u003cbr\\u003ecount=%{y}\\u003cextra\\u003e\\u003c\\u002fextra\\u003e\",\"legendgroup\":\"United States\",\"marker\":{\"color\":\"#636efa\",\"pattern\":{\"shape\":\"\"}},\"name\":\"United States\",\"offsetgroup\":\"United States\",\"orientation\":\"v\",\"showlegend\":true,\"textposition\":\"auto\",\"x\":[\"United States\"],\"xaxis\":\"x\",\"y\":[2818],\"yaxis\":\"y\",\"type\":\"bar\"},{\"alignmentgroup\":\"True\",\"hovertemplate\":\"country=%{x}\\u003cbr\\u003ecount=%{y}\\u003cextra\\u003e\\u003c\\u002fextra\\u003e\",\"legendgroup\":\"India\",\"marker\":{\"color\":\"#EF553B\",\"pattern\":{\"shape\":\"\"}},\"name\":\"India\",\"offsetgroup\":\"India\",\"orientation\":\"v\",\"showlegend\":true,\"textposition\":\"auto\",\"x\":[\"India\"],\"xaxis\":\"x\",\"y\":[972],\"yaxis\":\"y\",\"type\":\"bar\"},{\"alignmentgroup\":\"True\",\"hovertemplate\":\"country=%{x}\\u003cbr\\u003ecount=%{y}\\u003cextra\\u003e\\u003c\\u002fextra\\u003e\",\"legendgroup\":\"The country is unknown\",\"marker\":{\"color\":\"#00cc96\",\"pattern\":{\"shape\":\"\"}},\"name\":\"The country is unknown\",\"offsetgroup\":\"The country is unknown\",\"orientation\":\"v\",\"showlegend\":true,\"textposition\":\"auto\",\"x\":[\"The country is unknown\"],\"xaxis\":\"x\",\"y\":[831],\"yaxis\":\"y\",\"type\":\"bar\"},{\"alignmentgroup\":\"True\",\"hovertemplate\":\"country=%{x}\\u003cbr\\u003ecount=%{y}\\u003cextra\\u003e\\u003c\\u002fextra\\u003e\",\"legendgroup\":\"United Kingdom\",\"marker\":{\"color\":\"#ab63fa\",\"pattern\":{\"shape\":\"\"}},\"name\":\"United Kingdom\",\"offsetgroup\":\"United Kingdom\",\"orientation\":\"v\",\"showlegend\":true,\"textposition\":\"auto\",\"x\":[\"United Kingdom\"],\"xaxis\":\"x\",\"y\":[419],\"yaxis\":\"y\",\"type\":\"bar\"},{\"alignmentgroup\":\"True\",\"hovertemplate\":\"country=%{x}\\u003cbr\\u003ecount=%{y}\\u003cextra\\u003e\\u003c\\u002fextra\\u003e\",\"legendgroup\":\"Japan\",\"marker\":{\"color\":\"#FFA15A\",\"pattern\":{\"shape\":\"\"}},\"name\":\"Japan\",\"offsetgroup\":\"Japan\",\"orientation\":\"v\",\"showlegend\":true,\"textposition\":\"auto\",\"x\":[\"Japan\"],\"xaxis\":\"x\",\"y\":[245],\"yaxis\":\"y\",\"type\":\"bar\"}],                        {\"template\":{\"data\":{\"histogram2dcontour\":[{\"type\":\"histogram2dcontour\",\"colorbar\":{\"outlinewidth\":0,\"ticks\":\"\"},\"colorscale\":[[0.0,\"#0d0887\"],[0.1111111111111111,\"#46039f\"],[0.2222222222222222,\"#7201a8\"],[0.3333333333333333,\"#9c179e\"],[0.4444444444444444,\"#bd3786\"],[0.5555555555555556,\"#d8576b\"],[0.6666666666666666,\"#ed7953\"],[0.7777777777777778,\"#fb9f3a\"],[0.8888888888888888,\"#fdca26\"],[1.0,\"#f0f921\"]]}],\"choropleth\":[{\"type\":\"choropleth\",\"colorbar\":{\"outlinewidth\":0,\"ticks\":\"\"}}],\"histogram2d\":[{\"type\":\"histogram2d\",\"colorbar\":{\"outlinewidth\":0,\"ticks\":\"\"},\"colorscale\":[[0.0,\"#0d0887\"],[0.1111111111111111,\"#46039f\"],[0.2222222222222222,\"#7201a8\"],[0.3333333333333333,\"#9c179e\"],[0.4444444444444444,\"#bd3786\"],[0.5555555555555556,\"#d8576b\"],[0.6666666666666666,\"#ed7953\"],[0.7777777777777778,\"#fb9f3a\"],[0.8888888888888888,\"#fdca26\"],[1.0,\"#f0f921\"]]}],\"heatmap\":[{\"type\":\"heatmap\",\"colorbar\":{\"outlinewidth\":0,\"ticks\":\"\"},\"colorscale\":[[0.0,\"#0d0887\"],[0.1111111111111111,\"#46039f\"],[0.2222222222222222,\"#7201a8\"],[0.3333333333333333,\"#9c179e\"],[0.4444444444444444,\"#bd3786\"],[0.5555555555555556,\"#d8576b\"],[0.6666666666666666,\"#ed7953\"],[0.7777777777777778,\"#fb9f3a\"],[0.8888888888888888,\"#fdca26\"],[1.0,\"#f0f921\"]]}],\"heatmapgl\":[{\"type\":\"heatmapgl\",\"colorbar\":{\"outlinewidth\":0,\"ticks\":\"\"},\"colorscale\":[[0.0,\"#0d0887\"],[0.1111111111111111,\"#46039f\"],[0.2222222222222222,\"#7201a8\"],[0.3333333333333333,\"#9c179e\"],[0.4444444444444444,\"#bd3786\"],[0.5555555555555556,\"#d8576b\"],[0.6666666666666666,\"#ed7953\"],[0.7777777777777778,\"#fb9f3a\"],[0.8888888888888888,\"#fdca26\"],[1.0,\"#f0f921\"]]}],\"contourcarpet\":[{\"type\":\"contourcarpet\",\"colorbar\":{\"outlinewidth\":0,\"ticks\":\"\"}}],\"contour\":[{\"type\":\"contour\",\"colorbar\":{\"outlinewidth\":0,\"ticks\":\"\"},\"colorscale\":[[0.0,\"#0d0887\"],[0.1111111111111111,\"#46039f\"],[0.2222222222222222,\"#7201a8\"],[0.3333333333333333,\"#9c179e\"],[0.4444444444444444,\"#bd3786\"],[0.5555555555555556,\"#d8576b\"],[0.6666666666666666,\"#ed7953\"],[0.7777777777777778,\"#fb9f3a\"],[0.8888888888888888,\"#fdca26\"],[1.0,\"#f0f921\"]]}],\"surface\":[{\"type\":\"surface\",\"colorbar\":{\"outlinewidth\":0,\"ticks\":\"\"},\"colorscale\":[[0.0,\"#0d0887\"],[0.1111111111111111,\"#46039f\"],[0.2222222222222222,\"#7201a8\"],[0.3333333333333333,\"#9c179e\"],[0.4444444444444444,\"#bd3786\"],[0.5555555555555556,\"#d8576b\"],[0.6666666666666666,\"#ed7953\"],[0.7777777777777778,\"#fb9f3a\"],[0.8888888888888888,\"#fdca26\"],[1.0,\"#f0f921\"]]}],\"mesh3d\":[{\"type\":\"mesh3d\",\"colorbar\":{\"outlinewidth\":0,\"ticks\":\"\"}}],\"scatter\":[{\"fillpattern\":{\"fillmode\":\"overlay\",\"size\":10,\"solidity\":0.2},\"type\":\"scatter\"}],\"parcoords\":[{\"type\":\"parcoords\",\"line\":{\"colorbar\":{\"outlinewidth\":0,\"ticks\":\"\"}}}],\"scatterpolargl\":[{\"type\":\"scatterpolargl\",\"marker\":{\"colorbar\":{\"outlinewidth\":0,\"ticks\":\"\"}}}],\"bar\":[{\"error_x\":{\"color\":\"#2a3f5f\"},\"error_y\":{\"color\":\"#2a3f5f\"},\"marker\":{\"line\":{\"color\":\"#E5ECF6\",\"width\":0.5},\"pattern\":{\"fillmode\":\"overlay\",\"size\":10,\"solidity\":0.2}},\"type\":\"bar\"}],\"scattergeo\":[{\"type\":\"scattergeo\",\"marker\":{\"colorbar\":{\"outlinewidth\":0,\"ticks\":\"\"}}}],\"scatterpolar\":[{\"type\":\"scatterpolar\",\"marker\":{\"colorbar\":{\"outlinewidth\":0,\"ticks\":\"\"}}}],\"histogram\":[{\"marker\":{\"pattern\":{\"fillmode\":\"overlay\",\"size\":10,\"solidity\":0.2}},\"type\":\"histogram\"}],\"scattergl\":[{\"type\":\"scattergl\",\"marker\":{\"colorbar\":{\"outlinewidth\":0,\"ticks\":\"\"}}}],\"scatter3d\":[{\"type\":\"scatter3d\",\"line\":{\"colorbar\":{\"outlinewidth\":0,\"ticks\":\"\"}},\"marker\":{\"colorbar\":{\"outlinewidth\":0,\"ticks\":\"\"}}}],\"scattermapbox\":[{\"type\":\"scattermapbox\",\"marker\":{\"colorbar\":{\"outlinewidth\":0,\"ticks\":\"\"}}}],\"scatterternary\":[{\"type\":\"scatterternary\",\"marker\":{\"colorbar\":{\"outlinewidth\":0,\"ticks\":\"\"}}}],\"scattercarpet\":[{\"type\":\"scattercarpet\",\"marker\":{\"colorbar\":{\"outlinewidth\":0,\"ticks\":\"\"}}}],\"carpet\":[{\"aaxis\":{\"endlinecolor\":\"#2a3f5f\",\"gridcolor\":\"white\",\"linecolor\":\"white\",\"minorgridcolor\":\"white\",\"startlinecolor\":\"#2a3f5f\"},\"baxis\":{\"endlinecolor\":\"#2a3f5f\",\"gridcolor\":\"white\",\"linecolor\":\"white\",\"minorgridcolor\":\"white\",\"startlinecolor\":\"#2a3f5f\"},\"type\":\"carpet\"}],\"table\":[{\"cells\":{\"fill\":{\"color\":\"#EBF0F8\"},\"line\":{\"color\":\"white\"}},\"header\":{\"fill\":{\"color\":\"#C8D4E3\"},\"line\":{\"color\":\"white\"}},\"type\":\"table\"}],\"barpolar\":[{\"marker\":{\"line\":{\"color\":\"#E5ECF6\",\"width\":0.5},\"pattern\":{\"fillmode\":\"overlay\",\"size\":10,\"solidity\":0.2}},\"type\":\"barpolar\"}],\"pie\":[{\"automargin\":true,\"type\":\"pie\"}]},\"layout\":{\"autotypenumbers\":\"strict\",\"colorway\":[\"#636efa\",\"#EF553B\",\"#00cc96\",\"#ab63fa\",\"#FFA15A\",\"#19d3f3\",\"#FF6692\",\"#B6E880\",\"#FF97FF\",\"#FECB52\"],\"font\":{\"color\":\"#2a3f5f\"},\"hovermode\":\"closest\",\"hoverlabel\":{\"align\":\"left\"},\"paper_bgcolor\":\"white\",\"plot_bgcolor\":\"#E5ECF6\",\"polar\":{\"bgcolor\":\"#E5ECF6\",\"angularaxis\":{\"gridcolor\":\"white\",\"linecolor\":\"white\",\"ticks\":\"\"},\"radialaxis\":{\"gridcolor\":\"white\",\"linecolor\":\"white\",\"ticks\":\"\"}},\"ternary\":{\"bgcolor\":\"#E5ECF6\",\"aaxis\":{\"gridcolor\":\"white\",\"linecolor\":\"white\",\"ticks\":\"\"},\"baxis\":{\"gridcolor\":\"white\",\"linecolor\":\"white\",\"ticks\":\"\"},\"caxis\":{\"gridcolor\":\"white\",\"linecolor\":\"white\",\"ticks\":\"\"}},\"coloraxis\":{\"colorbar\":{\"outlinewidth\":0,\"ticks\":\"\"}},\"colorscale\":{\"sequential\":[[0.0,\"#0d0887\"],[0.1111111111111111,\"#46039f\"],[0.2222222222222222,\"#7201a8\"],[0.3333333333333333,\"#9c179e\"],[0.4444444444444444,\"#bd3786\"],[0.5555555555555556,\"#d8576b\"],[0.6666666666666666,\"#ed7953\"],[0.7777777777777778,\"#fb9f3a\"],[0.8888888888888888,\"#fdca26\"],[1.0,\"#f0f921\"]],\"sequentialminus\":[[0.0,\"#0d0887\"],[0.1111111111111111,\"#46039f\"],[0.2222222222222222,\"#7201a8\"],[0.3333333333333333,\"#9c179e\"],[0.4444444444444444,\"#bd3786\"],[0.5555555555555556,\"#d8576b\"],[0.6666666666666666,\"#ed7953\"],[0.7777777777777778,\"#fb9f3a\"],[0.8888888888888888,\"#fdca26\"],[1.0,\"#f0f921\"]],\"diverging\":[[0,\"#8e0152\"],[0.1,\"#c51b7d\"],[0.2,\"#de77ae\"],[0.3,\"#f1b6da\"],[0.4,\"#fde0ef\"],[0.5,\"#f7f7f7\"],[0.6,\"#e6f5d0\"],[0.7,\"#b8e186\"],[0.8,\"#7fbc41\"],[0.9,\"#4d9221\"],[1,\"#276419\"]]},\"xaxis\":{\"gridcolor\":\"white\",\"linecolor\":\"white\",\"ticks\":\"\",\"title\":{\"standoff\":15},\"zerolinecolor\":\"white\",\"automargin\":true,\"zerolinewidth\":2},\"yaxis\":{\"gridcolor\":\"white\",\"linecolor\":\"white\",\"ticks\":\"\",\"title\":{\"standoff\":15},\"zerolinecolor\":\"white\",\"automargin\":true,\"zerolinewidth\":2},\"scene\":{\"xaxis\":{\"backgroundcolor\":\"#E5ECF6\",\"gridcolor\":\"white\",\"linecolor\":\"white\",\"showbackground\":true,\"ticks\":\"\",\"zerolinecolor\":\"white\",\"gridwidth\":2},\"yaxis\":{\"backgroundcolor\":\"#E5ECF6\",\"gridcolor\":\"white\",\"linecolor\":\"white\",\"showbackground\":true,\"ticks\":\"\",\"zerolinecolor\":\"white\",\"gridwidth\":2},\"zaxis\":{\"backgroundcolor\":\"#E5ECF6\",\"gridcolor\":\"white\",\"linecolor\":\"white\",\"showbackground\":true,\"ticks\":\"\",\"zerolinecolor\":\"white\",\"gridwidth\":2}},\"shapedefaults\":{\"line\":{\"color\":\"#2a3f5f\"}},\"annotationdefaults\":{\"arrowcolor\":\"#2a3f5f\",\"arrowhead\":0,\"arrowwidth\":1},\"geo\":{\"bgcolor\":\"white\",\"landcolor\":\"#E5ECF6\",\"subunitcolor\":\"white\",\"showland\":true,\"showlakes\":true,\"lakecolor\":\"white\"},\"title\":{\"x\":0.05},\"mapbox\":{\"style\":\"light\"}}},\"xaxis\":{\"anchor\":\"y\",\"domain\":[0.0,1.0],\"title\":{\"text\":\"country\"},\"categoryorder\":\"array\",\"categoryarray\":[\"United States\",\"India\",\"The country is unknown\",\"United Kingdom\",\"Japan\"]},\"yaxis\":{\"anchor\":\"x\",\"domain\":[0.0,1.0],\"title\":{\"text\":\"count\"}},\"legend\":{\"title\":{\"text\":\"country\"},\"tracegroupgap\":0},\"margin\":{\"t\":60},\"barmode\":\"relative\"},                        {\"responsive\": true}                    ).then(function(){\n",
+       "                            \n",
+       "var gd = document.getElementById('20ddb8b8-7e50-46d7-ba86-82068dec16c6');\n",
+       "var x = new MutationObserver(function (mutations, observer) {{\n",
+       "        var display = window.getComputedStyle(gd).display;\n",
+       "        if (!display || display === 'none') {{\n",
+       "            console.log([gd, 'removed!']);\n",
+       "            Plotly.purge(gd);\n",
+       "            observer.disconnect();\n",
+       "        }}\n",
+       "}});\n",
+       "\n",
+       "// Listen for the removal of the full notebook cells\n",
+       "var notebookContainer = gd.closest('#notebook-container');\n",
+       "if (notebookContainer) {{\n",
+       "    x.observe(notebookContainer, {childList: true});\n",
+       "}}\n",
+       "\n",
+       "// Listen for the clearing of the current output cell\n",
+       "var outputEl = gd.closest('.output');\n",
+       "if (outputEl) {{\n",
+       "    x.observe(outputEl, {childList: true});\n",
+       "}}\n",
+       "\n",
+       "                        })                };                });            </script>        </div>"
+      ]
+     },
+     "metadata": {},
+     "output_type": "display_data"
+    }
+   ],
+   "source": [
+    "countries = df[df[\"country\"]!=\"he country is unknown\"]\n",
+    "country =countries[\"country\"].value_counts().reset_index()\n",
+    "country = country.head()\n",
+    "top_country = px.bar(data_frame=country,x='country',y='count',color='country')\n",
+    "top_country"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 26,
+   "id": "95e4f370",
+   "metadata": {
+    "execution": {
+     "iopub.execute_input": "2024-10-13T14:08:08.151750Z",
+     "iopub.status.busy": "2024-10-13T14:08:08.151334Z",
+     "iopub.status.idle": "2024-10-13T14:08:08.172403Z",
+     "shell.execute_reply": "2024-10-13T14:08:08.171315Z"
+    },
+    "papermill": {
+     "duration": 0.0402,
+     "end_time": "2024-10-13T14:08:08.174848",
+     "exception": false,
+     "start_time": "2024-10-13T14:08:08.134648",
+     "status": "completed"
+    },
+    "tags": []
+   },
+   "outputs": [
+    {
+     "data": {
+      "text/html": [
+       "<div>\n",
+       "<style scoped>\n",
+       "    .dataframe tbody tr th:only-of-type {\n",
+       "        vertical-align: middle;\n",
+       "    }\n",
+       "\n",
+       "    .dataframe tbody tr th {\n",
+       "        vertical-align: top;\n",
+       "    }\n",
+       "\n",
+       "    .dataframe thead th {\n",
+       "        text-align: right;\n",
+       "    }\n",
+       "</style>\n",
+       "<table border=\"1\" class=\"dataframe\">\n",
+       "  <thead>\n",
+       "    <tr style=\"text-align: right;\">\n",
+       "      <th></th>\n",
+       "      <th>show_id</th>\n",
+       "      <th>type</th>\n",
+       "      <th>title</th>\n",
+       "      <th>director</th>\n",
+       "      <th>cast</th>\n",
+       "      <th>country</th>\n",
+       "      <th>date_added</th>\n",
+       "      <th>release_year</th>\n",
+       "      <th>rating</th>\n",
+       "      <th>duration</th>\n",
+       "      <th>listed_in</th>\n",
+       "      <th>description</th>\n",
+       "    </tr>\n",
+       "  </thead>\n",
+       "  <tbody>\n",
+       "    <tr>\n",
+       "      <th>0</th>\n",
+       "      <td>s1</td>\n",
+       "      <td>Movie</td>\n",
+       "      <td>Dick Johnson Is Dead</td>\n",
+       "      <td>Kirsten Johnson</td>\n",
+       "      <td>Kirsten Johnson</td>\n",
+       "      <td>United States</td>\n",
+       "      <td>September 25, 2021</td>\n",
+       "      <td>2020</td>\n",
+       "      <td>PG-13</td>\n",
+       "      <td>90 min</td>\n",
+       "      <td>Documentaries</td>\n",
+       "      <td>As her father nears the end of his life, filmm...</td>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>1</th>\n",
+       "      <td>s2</td>\n",
+       "      <td>TV Show</td>\n",
+       "      <td>Blood &amp; Water</td>\n",
+       "      <td>director not specified</td>\n",
+       "      <td>director not specified</td>\n",
+       "      <td>South Africa</td>\n",
+       "      <td>September 24, 2021</td>\n",
+       "      <td>2021</td>\n",
+       "      <td>TV-MA</td>\n",
+       "      <td>2 Seasons</td>\n",
+       "      <td>International TV Shows, TV Dramas, TV Mysteries</td>\n",
+       "      <td>After crossing paths at a party, a Cape Town t...</td>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>2</th>\n",
+       "      <td>s3</td>\n",
+       "      <td>TV Show</td>\n",
+       "      <td>Ganglands</td>\n",
+       "      <td>Julien Leclercq</td>\n",
+       "      <td>Julien Leclercq</td>\n",
+       "      <td>The country is unknown</td>\n",
+       "      <td>September 24, 2021</td>\n",
+       "      <td>2021</td>\n",
+       "      <td>TV-MA</td>\n",
+       "      <td>1 Season</td>\n",
+       "      <td>Crime TV Shows, International TV Shows, TV Act...</td>\n",
+       "      <td>To protect his family from a powerful drug lor...</td>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>3</th>\n",
+       "      <td>s4</td>\n",
+       "      <td>TV Show</td>\n",
+       "      <td>Jailbirds New Orleans</td>\n",
+       "      <td>director not specified</td>\n",
+       "      <td>director not specified</td>\n",
+       "      <td>The country is unknown</td>\n",
+       "      <td>September 24, 2021</td>\n",
+       "      <td>2021</td>\n",
+       "      <td>TV-MA</td>\n",
+       "      <td>1 Season</td>\n",
+       "      <td>Docuseries, Reality TV</td>\n",
+       "      <td>Feuds, flirtations and toilet talk go down amo...</td>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>4</th>\n",
+       "      <td>s5</td>\n",
+       "      <td>TV Show</td>\n",
+       "      <td>Kota Factory</td>\n",
+       "      <td>director not specified</td>\n",
+       "      <td>director not specified</td>\n",
+       "      <td>India</td>\n",
+       "      <td>September 24, 2021</td>\n",
+       "      <td>2021</td>\n",
+       "      <td>TV-MA</td>\n",
+       "      <td>2 Seasons</td>\n",
+       "      <td>International TV Shows, Romantic TV Shows, TV ...</td>\n",
+       "      <td>In a city of coaching centers known to train I...</td>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>...</th>\n",
+       "      <td>...</td>\n",
+       "      <td>...</td>\n",
+       "      <td>...</td>\n",
+       "      <td>...</td>\n",
+       "      <td>...</td>\n",
+       "      <td>...</td>\n",
+       "      <td>...</td>\n",
+       "      <td>...</td>\n",
+       "      <td>...</td>\n",
+       "      <td>...</td>\n",
+       "      <td>...</td>\n",
+       "      <td>...</td>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>8802</th>\n",
+       "      <td>s8803</td>\n",
+       "      <td>Movie</td>\n",
+       "      <td>Zodiac</td>\n",
+       "      <td>David Fincher</td>\n",
+       "      <td>David Fincher</td>\n",
+       "      <td>United States</td>\n",
+       "      <td>November 20, 2019</td>\n",
+       "      <td>2007</td>\n",
+       "      <td>R</td>\n",
+       "      <td>158 min</td>\n",
+       "      <td>Cult Movies, Dramas, Thrillers</td>\n",
+       "      <td>A political cartoonist, a crime reporter and a...</td>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>8803</th>\n",
+       "      <td>s8804</td>\n",
+       "      <td>TV Show</td>\n",
+       "      <td>Zombie Dumb</td>\n",
+       "      <td>director not specified</td>\n",
+       "      <td>director not specified</td>\n",
+       "      <td>The country is unknown</td>\n",
+       "      <td>July 1, 2019</td>\n",
+       "      <td>2018</td>\n",
+       "      <td>TV-Y7</td>\n",
+       "      <td>2 Seasons</td>\n",
+       "      <td>Kids' TV, Korean TV Shows, TV Comedies</td>\n",
+       "      <td>While living alone in a spooky town, a young g...</td>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>8804</th>\n",
+       "      <td>s8805</td>\n",
+       "      <td>Movie</td>\n",
+       "      <td>Zombieland</td>\n",
+       "      <td>Ruben Fleischer</td>\n",
+       "      <td>Ruben Fleischer</td>\n",
+       "      <td>United States</td>\n",
+       "      <td>November 1, 2019</td>\n",
+       "      <td>2009</td>\n",
+       "      <td>R</td>\n",
+       "      <td>88 min</td>\n",
+       "      <td>Comedies, Horror Movies</td>\n",
+       "      <td>Looking to survive in a world taken over by zo...</td>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>8805</th>\n",
+       "      <td>s8806</td>\n",
+       "      <td>Movie</td>\n",
+       "      <td>Zoom</td>\n",
+       "      <td>Peter Hewitt</td>\n",
+       "      <td>Peter Hewitt</td>\n",
+       "      <td>United States</td>\n",
+       "      <td>January 11, 2020</td>\n",
+       "      <td>2006</td>\n",
+       "      <td>PG</td>\n",
+       "      <td>88 min</td>\n",
+       "      <td>Children &amp; Family Movies, Comedies</td>\n",
+       "      <td>Dragged from civilian life, a former superhero...</td>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>8806</th>\n",
+       "      <td>s8807</td>\n",
+       "      <td>Movie</td>\n",
+       "      <td>Zubaan</td>\n",
+       "      <td>Mozez Singh</td>\n",
+       "      <td>Mozez Singh</td>\n",
+       "      <td>India</td>\n",
+       "      <td>March 2, 2019</td>\n",
+       "      <td>2015</td>\n",
+       "      <td>TV-14</td>\n",
+       "      <td>111 min</td>\n",
+       "      <td>Dramas, International Movies, Music &amp; Musicals</td>\n",
+       "      <td>A scrappy but poor boy worms his way into a ty...</td>\n",
+       "    </tr>\n",
+       "  </tbody>\n",
+       "</table>\n",
+       "<p>8807 rows × 12 columns</p>\n",
+       "</div>"
+      ],
+      "text/plain": [
+       "     show_id     type                  title                director  \\\n",
+       "0         s1    Movie   Dick Johnson Is Dead         Kirsten Johnson   \n",
+       "1         s2  TV Show          Blood & Water  director not specified   \n",
+       "2         s3  TV Show              Ganglands         Julien Leclercq   \n",
+       "3         s4  TV Show  Jailbirds New Orleans  director not specified   \n",
+       "4         s5  TV Show           Kota Factory  director not specified   \n",
+       "...      ...      ...                    ...                     ...   \n",
+       "8802   s8803    Movie                 Zodiac           David Fincher   \n",
+       "8803   s8804  TV Show            Zombie Dumb  director not specified   \n",
+       "8804   s8805    Movie             Zombieland         Ruben Fleischer   \n",
+       "8805   s8806    Movie                   Zoom            Peter Hewitt   \n",
+       "8806   s8807    Movie                 Zubaan             Mozez Singh   \n",
+       "\n",
+       "                        cast                 country          date_added  \\\n",
+       "0            Kirsten Johnson           United States  September 25, 2021   \n",
+       "1     director not specified            South Africa  September 24, 2021   \n",
+       "2            Julien Leclercq  The country is unknown  September 24, 2021   \n",
+       "3     director not specified  The country is unknown  September 24, 2021   \n",
+       "4     director not specified                   India  September 24, 2021   \n",
+       "...                      ...                     ...                 ...   \n",
+       "8802           David Fincher           United States   November 20, 2019   \n",
+       "8803  director not specified  The country is unknown        July 1, 2019   \n",
+       "8804         Ruben Fleischer           United States    November 1, 2019   \n",
+       "8805            Peter Hewitt           United States    January 11, 2020   \n",
+       "8806             Mozez Singh                   India       March 2, 2019   \n",
+       "\n",
+       "      release_year rating   duration  \\\n",
+       "0             2020  PG-13     90 min   \n",
+       "1             2021  TV-MA  2 Seasons   \n",
+       "2             2021  TV-MA   1 Season   \n",
+       "3             2021  TV-MA   1 Season   \n",
+       "4             2021  TV-MA  2 Seasons   \n",
+       "...            ...    ...        ...   \n",
+       "8802          2007      R    158 min   \n",
+       "8803          2018  TV-Y7  2 Seasons   \n",
+       "8804          2009      R     88 min   \n",
+       "8805          2006     PG     88 min   \n",
+       "8806          2015  TV-14    111 min   \n",
+       "\n",
+       "                                              listed_in  \\\n",
+       "0                                         Documentaries   \n",
+       "1       International TV Shows, TV Dramas, TV Mysteries   \n",
+       "2     Crime TV Shows, International TV Shows, TV Act...   \n",
+       "3                                Docuseries, Reality TV   \n",
+       "4     International TV Shows, Romantic TV Shows, TV ...   \n",
+       "...                                                 ...   \n",
+       "8802                     Cult Movies, Dramas, Thrillers   \n",
+       "8803             Kids' TV, Korean TV Shows, TV Comedies   \n",
+       "8804                            Comedies, Horror Movies   \n",
+       "8805                 Children & Family Movies, Comedies   \n",
+       "8806     Dramas, International Movies, Music & Musicals   \n",
+       "\n",
+       "                                            description  \n",
+       "0     As her father nears the end of his life, filmm...  \n",
+       "1     After crossing paths at a party, a Cape Town t...  \n",
+       "2     To protect his family from a powerful drug lor...  \n",
+       "3     Feuds, flirtations and toilet talk go down amo...  \n",
+       "4     In a city of coaching centers known to train I...  \n",
+       "...                                                 ...  \n",
+       "8802  A political cartoonist, a crime reporter and a...  \n",
+       "8803  While living alone in a spooky town, a young g...  \n",
+       "8804  Looking to survive in a world taken over by zo...  \n",
+       "8805  Dragged from civilian life, a former superhero...  \n",
+       "8806  A scrappy but poor boy worms his way into a ty...  \n",
+       "\n",
+       "[8807 rows x 12 columns]"
+      ]
+     },
+     "execution_count": 26,
+     "metadata": {},
+     "output_type": "execute_result"
+    }
+   ],
+   "source": [
+    "df"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 27,
+   "id": "d2e11348",
+   "metadata": {
+    "execution": {
+     "iopub.execute_input": "2024-10-13T14:08:08.209101Z",
+     "iopub.status.busy": "2024-10-13T14:08:08.208622Z",
+     "iopub.status.idle": "2024-10-13T14:08:08.222513Z",
+     "shell.execute_reply": "2024-10-13T14:08:08.221439Z"
+    },
+    "papermill": {
+     "duration": 0.033699,
+     "end_time": "2024-10-13T14:08:08.224879",
+     "exception": false,
+     "start_time": "2024-10-13T14:08:08.191180",
+     "status": "completed"
+    },
+    "tags": []
+   },
+   "outputs": [
+    {
+     "data": {
+      "text/plain": [
+       "<bound method NDFrame.head of      show_id     type                  title                director  \\\n",
+       "0         s1    Movie   Dick Johnson Is Dead         Kirsten Johnson   \n",
+       "1         s2  TV Show          Blood & Water  director not specified   \n",
+       "2         s3  TV Show              Ganglands         Julien Leclercq   \n",
+       "3         s4  TV Show  Jailbirds New Orleans  director not specified   \n",
+       "4         s5  TV Show           Kota Factory  director not specified   \n",
+       "...      ...      ...                    ...                     ...   \n",
+       "8802   s8803    Movie                 Zodiac           David Fincher   \n",
+       "8803   s8804  TV Show            Zombie Dumb  director not specified   \n",
+       "8804   s8805    Movie             Zombieland         Ruben Fleischer   \n",
+       "8805   s8806    Movie                   Zoom            Peter Hewitt   \n",
+       "8806   s8807    Movie                 Zubaan             Mozez Singh   \n",
+       "\n",
+       "                        cast                 country          date_added  \\\n",
+       "0            Kirsten Johnson           United States  September 25, 2021   \n",
+       "1     director not specified            South Africa  September 24, 2021   \n",
+       "2            Julien Leclercq  The country is unknown  September 24, 2021   \n",
+       "3     director not specified  The country is unknown  September 24, 2021   \n",
+       "4     director not specified                   India  September 24, 2021   \n",
+       "...                      ...                     ...                 ...   \n",
+       "8802           David Fincher           United States   November 20, 2019   \n",
+       "8803  director not specified  The country is unknown        July 1, 2019   \n",
+       "8804         Ruben Fleischer           United States    November 1, 2019   \n",
+       "8805            Peter Hewitt           United States    January 11, 2020   \n",
+       "8806             Mozez Singh                   India       March 2, 2019   \n",
+       "\n",
+       "      release_year rating   duration  \\\n",
+       "0             2020  PG-13     90 min   \n",
+       "1             2021  TV-MA  2 Seasons   \n",
+       "2             2021  TV-MA   1 Season   \n",
+       "3             2021  TV-MA   1 Season   \n",
+       "4             2021  TV-MA  2 Seasons   \n",
+       "...            ...    ...        ...   \n",
+       "8802          2007      R    158 min   \n",
+       "8803          2018  TV-Y7  2 Seasons   \n",
+       "8804          2009      R     88 min   \n",
+       "8805          2006     PG     88 min   \n",
+       "8806          2015  TV-14    111 min   \n",
+       "\n",
+       "                                              listed_in  \\\n",
+       "0                                         Documentaries   \n",
+       "1       International TV Shows, TV Dramas, TV Mysteries   \n",
+       "2     Crime TV Shows, International TV Shows, TV Act...   \n",
+       "3                                Docuseries, Reality TV   \n",
+       "4     International TV Shows, Romantic TV Shows, TV ...   \n",
+       "...                                                 ...   \n",
+       "8802                     Cult Movies, Dramas, Thrillers   \n",
+       "8803             Kids' TV, Korean TV Shows, TV Comedies   \n",
+       "8804                            Comedies, Horror Movies   \n",
+       "8805                 Children & Family Movies, Comedies   \n",
+       "8806     Dramas, International Movies, Music & Musicals   \n",
+       "\n",
+       "                                            description  \n",
+       "0     As her father nears the end of his life, filmm...  \n",
+       "1     After crossing paths at a party, a Cape Town t...  \n",
+       "2     To protect his family from a powerful drug lor...  \n",
+       "3     Feuds, flirtations and toilet talk go down amo...  \n",
+       "4     In a city of coaching centers known to train I...  \n",
+       "...                                                 ...  \n",
+       "8802  A political cartoonist, a crime reporter and a...  \n",
+       "8803  While living alone in a spooky town, a young g...  \n",
+       "8804  Looking to survive in a world taken over by zo...  \n",
+       "8805  Dragged from civilian life, a former superhero...  \n",
+       "8806  A scrappy but poor boy worms his way into a ty...  \n",
+       "\n",
+       "[8807 rows x 12 columns]>"
+      ]
+     },
+     "execution_count": 27,
+     "metadata": {},
+     "output_type": "execute_result"
+    }
+   ],
+   "source": [
+    "df.head"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 28,
+   "id": "943782e5",
+   "metadata": {
+    "execution": {
+     "iopub.execute_input": "2024-10-13T14:08:08.260516Z",
+     "iopub.status.busy": "2024-10-13T14:08:08.259650Z",
+     "iopub.status.idle": "2024-10-13T14:08:08.357382Z",
+     "shell.execute_reply": "2024-10-13T14:08:08.356314Z"
+    },
+    "papermill": {
+     "duration": 0.118575,
+     "end_time": "2024-10-13T14:08:08.359904",
+     "exception": false,
+     "start_time": "2024-10-13T14:08:08.241329",
+     "status": "completed"
+    },
+    "tags": []
+   },
+   "outputs": [
+    {
+     "data": {
+      "text/html": [
+       "<div>                            <div id=\"99556a82-93f9-4d29-b6a7-58a4ed55fd07\" class=\"plotly-graph-div\" style=\"height:525px; width:100%;\"></div>            <script type=\"text/javascript\">                require([\"plotly\"], function(Plotly) {                    window.PLOTLYENV=window.PLOTLYENV || {};                                    if (document.getElementById(\"99556a82-93f9-4d29-b6a7-58a4ed55fd07\")) {                    Plotly.newPlot(                        \"99556a82-93f9-4d29-b6a7-58a4ed55fd07\",                        [{\"alignmentgroup\":\"True\",\"hovertemplate\":\"country=%{x}\\u003cbr\\u003ecount=%{y}\\u003cextra\\u003e\\u003c\\u002fextra\\u003e\",\"legendgroup\":\"United States\",\"marker\":{\"color\":\"#636efa\",\"pattern\":{\"shape\":\"\"}},\"name\":\"United States\",\"offsetgroup\":\"United States\",\"orientation\":\"v\",\"showlegend\":true,\"textposition\":\"auto\",\"x\":[\"United States\"],\"xaxis\":\"x\",\"y\":[2818],\"yaxis\":\"y\",\"type\":\"bar\"},{\"alignmentgroup\":\"True\",\"hovertemplate\":\"country=%{x}\\u003cbr\\u003ecount=%{y}\\u003cextra\\u003e\\u003c\\u002fextra\\u003e\",\"legendgroup\":\"India\",\"marker\":{\"color\":\"#EF553B\",\"pattern\":{\"shape\":\"\"}},\"name\":\"India\",\"offsetgroup\":\"India\",\"orientation\":\"v\",\"showlegend\":true,\"textposition\":\"auto\",\"x\":[\"India\"],\"xaxis\":\"x\",\"y\":[972],\"yaxis\":\"y\",\"type\":\"bar\"},{\"alignmentgroup\":\"True\",\"hovertemplate\":\"country=%{x}\\u003cbr\\u003ecount=%{y}\\u003cextra\\u003e\\u003c\\u002fextra\\u003e\",\"legendgroup\":\"The country is unknown\",\"marker\":{\"color\":\"#00cc96\",\"pattern\":{\"shape\":\"\"}},\"name\":\"The country is unknown\",\"offsetgroup\":\"The country is unknown\",\"orientation\":\"v\",\"showlegend\":true,\"textposition\":\"auto\",\"x\":[\"The country is unknown\"],\"xaxis\":\"x\",\"y\":[831],\"yaxis\":\"y\",\"type\":\"bar\"},{\"alignmentgroup\":\"True\",\"hovertemplate\":\"country=%{x}\\u003cbr\\u003ecount=%{y}\\u003cextra\\u003e\\u003c\\u002fextra\\u003e\",\"legendgroup\":\"United Kingdom\",\"marker\":{\"color\":\"#ab63fa\",\"pattern\":{\"shape\":\"\"}},\"name\":\"United Kingdom\",\"offsetgroup\":\"United Kingdom\",\"orientation\":\"v\",\"showlegend\":true,\"textposition\":\"auto\",\"x\":[\"United Kingdom\"],\"xaxis\":\"x\",\"y\":[419],\"yaxis\":\"y\",\"type\":\"bar\"},{\"alignmentgroup\":\"True\",\"hovertemplate\":\"country=%{x}\\u003cbr\\u003ecount=%{y}\\u003cextra\\u003e\\u003c\\u002fextra\\u003e\",\"legendgroup\":\"Japan\",\"marker\":{\"color\":\"#FFA15A\",\"pattern\":{\"shape\":\"\"}},\"name\":\"Japan\",\"offsetgroup\":\"Japan\",\"orientation\":\"v\",\"showlegend\":true,\"textposition\":\"auto\",\"x\":[\"Japan\"],\"xaxis\":\"x\",\"y\":[245],\"yaxis\":\"y\",\"type\":\"bar\"}],                        {\"template\":{\"data\":{\"histogram2dcontour\":[{\"type\":\"histogram2dcontour\",\"colorbar\":{\"outlinewidth\":0,\"ticks\":\"\"},\"colorscale\":[[0.0,\"#0d0887\"],[0.1111111111111111,\"#46039f\"],[0.2222222222222222,\"#7201a8\"],[0.3333333333333333,\"#9c179e\"],[0.4444444444444444,\"#bd3786\"],[0.5555555555555556,\"#d8576b\"],[0.6666666666666666,\"#ed7953\"],[0.7777777777777778,\"#fb9f3a\"],[0.8888888888888888,\"#fdca26\"],[1.0,\"#f0f921\"]]}],\"choropleth\":[{\"type\":\"choropleth\",\"colorbar\":{\"outlinewidth\":0,\"ticks\":\"\"}}],\"histogram2d\":[{\"type\":\"histogram2d\",\"colorbar\":{\"outlinewidth\":0,\"ticks\":\"\"},\"colorscale\":[[0.0,\"#0d0887\"],[0.1111111111111111,\"#46039f\"],[0.2222222222222222,\"#7201a8\"],[0.3333333333333333,\"#9c179e\"],[0.4444444444444444,\"#bd3786\"],[0.5555555555555556,\"#d8576b\"],[0.6666666666666666,\"#ed7953\"],[0.7777777777777778,\"#fb9f3a\"],[0.8888888888888888,\"#fdca26\"],[1.0,\"#f0f921\"]]}],\"heatmap\":[{\"type\":\"heatmap\",\"colorbar\":{\"outlinewidth\":0,\"ticks\":\"\"},\"colorscale\":[[0.0,\"#0d0887\"],[0.1111111111111111,\"#46039f\"],[0.2222222222222222,\"#7201a8\"],[0.3333333333333333,\"#9c179e\"],[0.4444444444444444,\"#bd3786\"],[0.5555555555555556,\"#d8576b\"],[0.6666666666666666,\"#ed7953\"],[0.7777777777777778,\"#fb9f3a\"],[0.8888888888888888,\"#fdca26\"],[1.0,\"#f0f921\"]]}],\"heatmapgl\":[{\"type\":\"heatmapgl\",\"colorbar\":{\"outlinewidth\":0,\"ticks\":\"\"},\"colorscale\":[[0.0,\"#0d0887\"],[0.1111111111111111,\"#46039f\"],[0.2222222222222222,\"#7201a8\"],[0.3333333333333333,\"#9c179e\"],[0.4444444444444444,\"#bd3786\"],[0.5555555555555556,\"#d8576b\"],[0.6666666666666666,\"#ed7953\"],[0.7777777777777778,\"#fb9f3a\"],[0.8888888888888888,\"#fdca26\"],[1.0,\"#f0f921\"]]}],\"contourcarpet\":[{\"type\":\"contourcarpet\",\"colorbar\":{\"outlinewidth\":0,\"ticks\":\"\"}}],\"contour\":[{\"type\":\"contour\",\"colorbar\":{\"outlinewidth\":0,\"ticks\":\"\"},\"colorscale\":[[0.0,\"#0d0887\"],[0.1111111111111111,\"#46039f\"],[0.2222222222222222,\"#7201a8\"],[0.3333333333333333,\"#9c179e\"],[0.4444444444444444,\"#bd3786\"],[0.5555555555555556,\"#d8576b\"],[0.6666666666666666,\"#ed7953\"],[0.7777777777777778,\"#fb9f3a\"],[0.8888888888888888,\"#fdca26\"],[1.0,\"#f0f921\"]]}],\"surface\":[{\"type\":\"surface\",\"colorbar\":{\"outlinewidth\":0,\"ticks\":\"\"},\"colorscale\":[[0.0,\"#0d0887\"],[0.1111111111111111,\"#46039f\"],[0.2222222222222222,\"#7201a8\"],[0.3333333333333333,\"#9c179e\"],[0.4444444444444444,\"#bd3786\"],[0.5555555555555556,\"#d8576b\"],[0.6666666666666666,\"#ed7953\"],[0.7777777777777778,\"#fb9f3a\"],[0.8888888888888888,\"#fdca26\"],[1.0,\"#f0f921\"]]}],\"mesh3d\":[{\"type\":\"mesh3d\",\"colorbar\":{\"outlinewidth\":0,\"ticks\":\"\"}}],\"scatter\":[{\"fillpattern\":{\"fillmode\":\"overlay\",\"size\":10,\"solidity\":0.2},\"type\":\"scatter\"}],\"parcoords\":[{\"type\":\"parcoords\",\"line\":{\"colorbar\":{\"outlinewidth\":0,\"ticks\":\"\"}}}],\"scatterpolargl\":[{\"type\":\"scatterpolargl\",\"marker\":{\"colorbar\":{\"outlinewidth\":0,\"ticks\":\"\"}}}],\"bar\":[{\"error_x\":{\"color\":\"#2a3f5f\"},\"error_y\":{\"color\":\"#2a3f5f\"},\"marker\":{\"line\":{\"color\":\"#E5ECF6\",\"width\":0.5},\"pattern\":{\"fillmode\":\"overlay\",\"size\":10,\"solidity\":0.2}},\"type\":\"bar\"}],\"scattergeo\":[{\"type\":\"scattergeo\",\"marker\":{\"colorbar\":{\"outlinewidth\":0,\"ticks\":\"\"}}}],\"scatterpolar\":[{\"type\":\"scatterpolar\",\"marker\":{\"colorbar\":{\"outlinewidth\":0,\"ticks\":\"\"}}}],\"histogram\":[{\"marker\":{\"pattern\":{\"fillmode\":\"overlay\",\"size\":10,\"solidity\":0.2}},\"type\":\"histogram\"}],\"scattergl\":[{\"type\":\"scattergl\",\"marker\":{\"colorbar\":{\"outlinewidth\":0,\"ticks\":\"\"}}}],\"scatter3d\":[{\"type\":\"scatter3d\",\"line\":{\"colorbar\":{\"outlinewidth\":0,\"ticks\":\"\"}},\"marker\":{\"colorbar\":{\"outlinewidth\":0,\"ticks\":\"\"}}}],\"scattermapbox\":[{\"type\":\"scattermapbox\",\"marker\":{\"colorbar\":{\"outlinewidth\":0,\"ticks\":\"\"}}}],\"scatterternary\":[{\"type\":\"scatterternary\",\"marker\":{\"colorbar\":{\"outlinewidth\":0,\"ticks\":\"\"}}}],\"scattercarpet\":[{\"type\":\"scattercarpet\",\"marker\":{\"colorbar\":{\"outlinewidth\":0,\"ticks\":\"\"}}}],\"carpet\":[{\"aaxis\":{\"endlinecolor\":\"#2a3f5f\",\"gridcolor\":\"white\",\"linecolor\":\"white\",\"minorgridcolor\":\"white\",\"startlinecolor\":\"#2a3f5f\"},\"baxis\":{\"endlinecolor\":\"#2a3f5f\",\"gridcolor\":\"white\",\"linecolor\":\"white\",\"minorgridcolor\":\"white\",\"startlinecolor\":\"#2a3f5f\"},\"type\":\"carpet\"}],\"table\":[{\"cells\":{\"fill\":{\"color\":\"#EBF0F8\"},\"line\":{\"color\":\"white\"}},\"header\":{\"fill\":{\"color\":\"#C8D4E3\"},\"line\":{\"color\":\"white\"}},\"type\":\"table\"}],\"barpolar\":[{\"marker\":{\"line\":{\"color\":\"#E5ECF6\",\"width\":0.5},\"pattern\":{\"fillmode\":\"overlay\",\"size\":10,\"solidity\":0.2}},\"type\":\"barpolar\"}],\"pie\":[{\"automargin\":true,\"type\":\"pie\"}]},\"layout\":{\"autotypenumbers\":\"strict\",\"colorway\":[\"#636efa\",\"#EF553B\",\"#00cc96\",\"#ab63fa\",\"#FFA15A\",\"#19d3f3\",\"#FF6692\",\"#B6E880\",\"#FF97FF\",\"#FECB52\"],\"font\":{\"color\":\"#2a3f5f\"},\"hovermode\":\"closest\",\"hoverlabel\":{\"align\":\"left\"},\"paper_bgcolor\":\"white\",\"plot_bgcolor\":\"#E5ECF6\",\"polar\":{\"bgcolor\":\"#E5ECF6\",\"angularaxis\":{\"gridcolor\":\"white\",\"linecolor\":\"white\",\"ticks\":\"\"},\"radialaxis\":{\"gridcolor\":\"white\",\"linecolor\":\"white\",\"ticks\":\"\"}},\"ternary\":{\"bgcolor\":\"#E5ECF6\",\"aaxis\":{\"gridcolor\":\"white\",\"linecolor\":\"white\",\"ticks\":\"\"},\"baxis\":{\"gridcolor\":\"white\",\"linecolor\":\"white\",\"ticks\":\"\"},\"caxis\":{\"gridcolor\":\"white\",\"linecolor\":\"white\",\"ticks\":\"\"}},\"coloraxis\":{\"colorbar\":{\"outlinewidth\":0,\"ticks\":\"\"}},\"colorscale\":{\"sequential\":[[0.0,\"#0d0887\"],[0.1111111111111111,\"#46039f\"],[0.2222222222222222,\"#7201a8\"],[0.3333333333333333,\"#9c179e\"],[0.4444444444444444,\"#bd3786\"],[0.5555555555555556,\"#d8576b\"],[0.6666666666666666,\"#ed7953\"],[0.7777777777777778,\"#fb9f3a\"],[0.8888888888888888,\"#fdca26\"],[1.0,\"#f0f921\"]],\"sequentialminus\":[[0.0,\"#0d0887\"],[0.1111111111111111,\"#46039f\"],[0.2222222222222222,\"#7201a8\"],[0.3333333333333333,\"#9c179e\"],[0.4444444444444444,\"#bd3786\"],[0.5555555555555556,\"#d8576b\"],[0.6666666666666666,\"#ed7953\"],[0.7777777777777778,\"#fb9f3a\"],[0.8888888888888888,\"#fdca26\"],[1.0,\"#f0f921\"]],\"diverging\":[[0,\"#8e0152\"],[0.1,\"#c51b7d\"],[0.2,\"#de77ae\"],[0.3,\"#f1b6da\"],[0.4,\"#fde0ef\"],[0.5,\"#f7f7f7\"],[0.6,\"#e6f5d0\"],[0.7,\"#b8e186\"],[0.8,\"#7fbc41\"],[0.9,\"#4d9221\"],[1,\"#276419\"]]},\"xaxis\":{\"gridcolor\":\"white\",\"linecolor\":\"white\",\"ticks\":\"\",\"title\":{\"standoff\":15},\"zerolinecolor\":\"white\",\"automargin\":true,\"zerolinewidth\":2},\"yaxis\":{\"gridcolor\":\"white\",\"linecolor\":\"white\",\"ticks\":\"\",\"title\":{\"standoff\":15},\"zerolinecolor\":\"white\",\"automargin\":true,\"zerolinewidth\":2},\"scene\":{\"xaxis\":{\"backgroundcolor\":\"#E5ECF6\",\"gridcolor\":\"white\",\"linecolor\":\"white\",\"showbackground\":true,\"ticks\":\"\",\"zerolinecolor\":\"white\",\"gridwidth\":2},\"yaxis\":{\"backgroundcolor\":\"#E5ECF6\",\"gridcolor\":\"white\",\"linecolor\":\"white\",\"showbackground\":true,\"ticks\":\"\",\"zerolinecolor\":\"white\",\"gridwidth\":2},\"zaxis\":{\"backgroundcolor\":\"#E5ECF6\",\"gridcolor\":\"white\",\"linecolor\":\"white\",\"showbackground\":true,\"ticks\":\"\",\"zerolinecolor\":\"white\",\"gridwidth\":2}},\"shapedefaults\":{\"line\":{\"color\":\"#2a3f5f\"}},\"annotationdefaults\":{\"arrowcolor\":\"#2a3f5f\",\"arrowhead\":0,\"arrowwidth\":1},\"geo\":{\"bgcolor\":\"white\",\"landcolor\":\"#E5ECF6\",\"subunitcolor\":\"white\",\"showland\":true,\"showlakes\":true,\"lakecolor\":\"white\"},\"title\":{\"x\":0.05},\"mapbox\":{\"style\":\"light\"}}},\"xaxis\":{\"anchor\":\"y\",\"domain\":[0.0,1.0],\"title\":{\"text\":\"country\"},\"categoryorder\":\"array\",\"categoryarray\":[\"United States\",\"India\",\"The country is unknown\",\"United Kingdom\",\"Japan\"]},\"yaxis\":{\"anchor\":\"x\",\"domain\":[0.0,1.0],\"title\":{\"text\":\"count\"}},\"legend\":{\"title\":{\"text\":\"country\"},\"tracegroupgap\":0},\"margin\":{\"t\":60},\"barmode\":\"relative\"},                        {\"responsive\": true}                    ).then(function(){\n",
+       "                            \n",
+       "var gd = document.getElementById('99556a82-93f9-4d29-b6a7-58a4ed55fd07');\n",
+       "var x = new MutationObserver(function (mutations, observer) {{\n",
+       "        var display = window.getComputedStyle(gd).display;\n",
+       "        if (!display || display === 'none') {{\n",
+       "            console.log([gd, 'removed!']);\n",
+       "            Plotly.purge(gd);\n",
+       "            observer.disconnect();\n",
+       "        }}\n",
+       "}});\n",
+       "\n",
+       "// Listen for the removal of the full notebook cells\n",
+       "var notebookContainer = gd.closest('#notebook-container');\n",
+       "if (notebookContainer) {{\n",
+       "    x.observe(notebookContainer, {childList: true});\n",
+       "}}\n",
+       "\n",
+       "// Listen for the clearing of the current output cell\n",
+       "var outputEl = gd.closest('.output');\n",
+       "if (outputEl) {{\n",
+       "    x.observe(outputEl, {childList: true});\n",
+       "}}\n",
+       "\n",
+       "                        })                };                });            </script>        </div>"
+      ]
+     },
+     "metadata": {},
+     "output_type": "display_data"
+    }
+   ],
+   "source": [
+    "duration=df[\"duration\"].value_counts().reset_index()\n",
+    "country = country.head()\n",
+    "top_country = px.bar(data_frame=country,x='country',y='count',color='country')\n",
+    "top_country"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "id": "44b27319",
+   "metadata": {
+    "papermill": {
+     "duration": 0.016373,
+     "end_time": "2024-10-13T14:08:08.393191",
+     "exception": false,
+     "start_time": "2024-10-13T14:08:08.376818",
+     "status": "completed"
+    },
+    "tags": []
+   },
+   "outputs": [],
+   "source": []
+  }
+ ],
+ "metadata": {
+  "kaggle": {
+   "accelerator": "none",
+   "dataSources": [
+    {
+     "datasetId": 434238,
+     "sourceId": 2654038,
+     "sourceType": "datasetVersion"
+    }
+   ],
+   "dockerImageVersionId": 30786,
+   "isGpuEnabled": false,
+   "isInternetEnabled": true,
+   "language": "python",
+   "sourceType": "notebook"
+  },
+  "kernelspec": {
+   "display_name": "Python 3",
+   "language": "python",
+   "name": "python3"
+  },
+  "language_info": {
+   "codemirror_mode": {
+    "name": "ipython",
+    "version": 3
+   },
+   "file_extension": ".py",
+   "mimetype": "text/x-python",
+   "name": "python",
+   "nbconvert_exporter": "python",
+   "pygments_lexer": "ipython3",
+   "version": "3.10.14"
+  },
+  "papermill": {
+   "default_parameters": {},
+   "duration": 11.549857,
+   "end_time": "2024-10-13T14:08:09.132082",
+   "environment_variables": {},
+   "exception": null,
+   "input_path": "__notebook__.ipynb",
+   "output_path": "__notebook__.ipynb",
+   "parameters": {},
+   "start_time": "2024-10-13T14:07:57.582225",
+   "version": "2.6.0"
+  }
+ },
+ "nbformat": 4,
+ "nbformat_minor": 5
+}
